@@ -217,14 +217,15 @@
    English word. Only rows within 1 of the piece's landing span are checked.
    ===================================================================== */
 
-const DATA = {"shapes":{"LLeft":{"forms":[[[1,2,3],[0,0,4]],[[0,1],[0,2],[4,3]],[[4,0,0],[3,2,1]],[[3,4],[2,0],[1,0]]],"grps":[[1,2,3],[3,4]]},"LLeft3":{"forms":[[[4,3,2],[0,0,1]],[[0,4],[0,3],[1,2]],[[1,0,0],[2,3,4]],[[2,1],[3,0],[4,0]]],"grps":[[1],[2,3,4]]},"LRight":{"forms":[[[2,3,4],[1,0,0]],[[1,2],[0,3],[0,4]],[[0,0,1],[4,3,2]],[[4,0],[3,0],[2,1]]],"grps":[[2,1],[2,3,4]]},"LRight3":{"forms":[[[1,2,3],[4,0,0]],[[4,1],[0,2],[0,3]],[[0,0,4],[3,2,1]],[[3,0],[2,0],[1,4]]],"grps":[[4],[3,2,1]]},"BalanceLeft":{"forms":[[[1,2,0],[0,3,4]],[[0,1],[3,2],[4,0]]],"grps":[[2,3],[4],[1]]},"BalanceRight":{"forms":[[[0,3,4],[1,2,0]],[[1,0],[2,3],[0,4]]],"grps":[[2,3],[4],[1]]},"Line":{"forms":[[[1],[2],[3],[4]],[[4,3,2,1]],[[4],[3],[2],[1]],[[1,2,3,4]]],"grps":[[1,2,3,4]]},"TShape":{"forms":[[[1,2,3],[0,4,0]],[[0,1],[4,2],[0,3]],[[0,4,0],[3,2,1]],[[3,0],[2,4],[1,0]]],"grps":[[1,2,3],[2,4]]},"TShape2":{"forms":[[[2,3,4],[0,1,0]],[[0,2],[1,3],[0,4]],[[0,1,0],[4,3,2]],[[4,0],[3,1],[2,0]]],"grps":[[3,1],[2,3,4]]},"TShape3":{"forms":[[[2,3,4],[0,1,0]],[[0,2],[1,3],[0,4]],[[0,1,0],[4,3,2]],[[4,0],[3,1],[2,0]]],"grps":[[1],[2,3,4]]},"Square2":{"forms":[[[1,2],[4,3]],[[4,1],[3,2]],[[3,4],[2,1]],[[2,3],[1,4]]],"grps":[[1,2],[3],[4]]},"LLeft4":{"forms":[[[4,3,2],[0,0,1]],[[0,4],[0,3],[1,2]],[[1,0,0],[2,3,4]],[[2,1],[3,0],[4,0]]],"grps":[[1],[4,3,2]]},"Square3":{"forms":[[[1,2],[4,3]],[[4,1],[3,2]],[[3,4],[2,1]],[[2,3],[1,4]]],"grps":[[1,2],[3,4]]},"TShape4":{"forms":[[[2,3,4],[0,1,0]],[[0,2],[1,3],[0,4]],[[0,1,0],[4,3,2]],[[4,0],[3,1],[2,0]]],"grps":[[1],[4,3,2]]},"TShape5":{"forms":[[[1,2,3],[0,4,0]],[[0,1],[4,2],[0,3]],[[0,4,0],[3,2,1]],[[3,0],[2,4],[1,0]]],"grps":[[3,2,1],[2,4]]},"TinyL":{"forms":[[[1,2],[0,3]],[[0,1],[3,2]],[[3,0],[2,1]],[[2,3],[1,0]]],"grps":[[1,2],[2,3]]}},"phonicsets":{"1":["b","c","d","f","g","h","j","k","l","m","n","p","r","s","t","v","w","x","y","z","a","e","i","o","u"],"2":["sh","ch","th","wh","ph","kn","wr","gn","bl","br","cl","cr","dr","fl","fr","gl","gr","pl","pr","sc","sk","sl","sm","sn","sp","st","sw","tr","tw","ai","ea","ee","ey","ie","oa","oe","oo","ou","ue","ay"],"3":["ack","ail","ain","air","ake","ale","all","ame","amp","and","ank","ant","ape","ark","arm","arn","art","ast","ate","ath","ave","aze","eat","eck","eed","een","eep","ell","end","ent","ern","est","ice","ick","ide","ife","ill","ime","ine","ing","ink","int","ist","oad","oat","ock","ond","one","ong","ool","oom","oon","oop","ope","ore","orn","ort","oss","owl","own","uck","ung","scr","spr","str","spl","squ","thr","shr","ace","ade","age","ane","are","ait","eak","eal","eam","ean","ear","eek","eel","eem","eer","eet","ike","ile","ipe","ire","ite","ive","ild","ind","oak","oar","obe","ode","oke","old","ole","oll","olt","ome","ote","ove","ost","uff","ull","ult","umb","ump","und","une","unk","unt","ush","usk","ust","ute","arc","ard","arl","arp","erd","ere","erg","erk","erm","ers","ert","ird","irk","irl","irm","irt","orb","ord","ork","orm","urb","urd","ure","urg","url","urn","urs","urt","tch","dge","nch"],"4":["atch","ight","ound","ouse"]}};
+const DATA = {"shapes":{"LLeft":{"forms":[[[1,2,3],[0,0,4]],[[0,1],[0,2],[4,3]],[[4,0,0],[3,2,1]],[[3,4],[2,0],[1,0]]],"grps":[[1,2,3],[3,4]]},"LLeft3":{"forms":[[[4,3,2],[0,0,1]],[[0,4],[0,3],[1,2]],[[1,0,0],[2,3,4]],[[2,1],[3,0],[4,0]]],"grps":[[1],[2,3,4]]},"LRight":{"forms":[[[2,3,4],[1,0,0]],[[1,2],[0,3],[0,4]],[[0,0,1],[4,3,2]],[[4,0],[3,0],[2,1]]],"grps":[[2,1],[2,3,4]]},"LRight3":{"forms":[[[1,2,3],[4,0,0]],[[4,1],[0,2],[0,3]],[[0,0,4],[3,2,1]],[[3,0],[2,0],[1,4]]],"grps":[[4],[3,2,1]]},"BalanceLeft":{"forms":[[[1,2,0],[0,3,4]],[[0,1],[3,2],[4,0]]],"grps":[[2,3],[4],[1]]},"BalanceRight":{"forms":[[[0,3,4],[1,2,0]],[[1,0],[2,3],[0,4]]],"grps":[[2,3],[4],[1]]},"Line":{"forms":[[[1],[2],[3],[4]],[[4,3,2,1]],[[4],[3],[2],[1]],[[1,2,3,4]]],"grps":[[1,2,3,4]]},"TShape":{"forms":[[[1,2,3],[0,4,0]],[[0,1],[4,2],[0,3]],[[0,4,0],[3,2,1]],[[3,0],[2,4],[1,0]]],"grps":[[1,2,3],[2,4]]},"TShape2":{"forms":[[[2,3,4],[0,1,0]],[[0,2],[1,3],[0,4]],[[0,1,0],[4,3,2]],[[4,0],[3,1],[2,0]]],"grps":[[3,1],[2,3,4]]},"TShape3":{"forms":[[[2,3,4],[0,1,0]],[[0,2],[1,3],[0,4]],[[0,1,0],[4,3,2]],[[4,0],[3,1],[2,0]]],"grps":[[1],[2,3,4]]},"Square2":{"forms":[[[1,2],[4,3]],[[4,1],[3,2]],[[3,4],[2,1]],[[2,3],[1,4]]],"grps":[[1,2],[3],[4]]},"LLeft4":{"forms":[[[4,3,2],[0,0,1]],[[0,4],[0,3],[1,2]],[[1,0,0],[2,3,4]],[[2,1],[3,0],[4,0]]],"grps":[[1],[4,3,2]]},"Square3":{"forms":[[[1,2],[4,3]],[[4,1],[3,2]],[[3,4],[2,1]],[[2,3],[1,4]]],"grps":[[1,2],[3,4]]},"TShape4":{"forms":[[[2,3,4],[0,1,0]],[[0,2],[1,3],[0,4]],[[0,1,0],[4,3,2]],[[4,0],[3,1],[2,0]]],"grps":[[1],[4,3,2]]},"TShape5":{"forms":[[[1,2,3],[0,4,0]],[[0,1],[4,2],[0,3]],[[0,4,0],[3,2,1]],[[3,0],[2,4],[1,0]]],"grps":[[3,2,1],[2,4]]}},"phonicsets":{"1":["b","c","d","f","g","h","j","k","l","m","n","p","r","s","t","v","w","x","y","z","a","e","i","o","u"],"2":["sh","ch","th","wh","ph","kn","wr","gn","bl","br","cl","cr","dr","fl","fr","gl","gr","pl","pr","sc","sk","sl","sm","sn","sp","st","sw","tr","tw","ai","ea","ee","ey","ie","oa","oe","oo","ou","ue","ay"],"3":["ack","ail","ain","air","ake","ale","all","ame","amp","and","ank","ant","ape","ark","arm","arn","art","ast","ate","ath","ave","aze","eat","eck","eed","een","eep","ell","end","ent","ern","est","ice","ick","ide","ife","ill","ime","ine","ing","ink","int","ist","oad","oat","ock","ond","one","ong","ool","oom","oon","oop","ope","ore","orn","ort","oss","owl","own","uck","ung","scr","spr","str","spl","squ","thr","shr","ace","ade","age","ane","are","ait","eak","eal","eam","ean","ear","eek","eel","eem","eer","eet","ike","ile","ipe","ire","ite","ive","ild","ind","oak","oar","obe","ode","oke","old","ole","oll","olt","ome","ote","ove","ost","uff","ull","ult","umb","ump","und","une","unk","unt","ush","usk","ust","ute","arc","ard","arl","arp","erd","ere","erg","erk","erm","ers","ert","ird","irk","irl","irm","irt","orb","ord","ork","orm","urb","urd","ure","urg","url","urn","urs","urt","tch","dge","nch"],"4":["atch","ight","ound","ouse"]}};
 const SHAPES = DATA.shapes;
 const SHAPE_NAMES = Object.keys(SHAPES);
 const PHONICSETS = DATA.phonicsets;
 
 const COLS = 10, ROWS = 20;
-const MIN_WORD = 4;              // main branch: clears at 4+ letters
-const GARBAGE_ROWS = 3;
+const MIN_WORD = 2;              // shortest word that can clear a row
+const GARBAGE_ROWS = 3;          // rows of bricks the player must clear to win
+const GARBAGE_RISE_AFTER = 10;   // pieces without a clear before a new brick row rises
 
 
 /* ------------------------------------------------------------------ canvas */
@@ -245,6 +246,8 @@ const nctx = nextCv.getContext('2d');
 /* ------------------------------------------------------------------ state */
 let saved, board, cur, nextPiece, score, found, running, paused, over, won;
 let dropTimer, dropInterval, garbageLeft;
+let bricksCleared = 0;           // brick rows removed this game
+let piecesSinceClear = 0;        // pieces landed since the last word was found
 let toastTimer = null;
 let resolving = false;
 let message = 'Form 4+ letter words!';
@@ -391,7 +394,7 @@ function pieceFrom(shapeName, characters){
    ============================================================ */
 const VOWELS = ['a','e','i','o','u','y'];
 const VOWEL_MIN = 2;
-const NEEDS_VOWELS = ["Square2", "Square3", "TinyL"];
+const NEEDS_VOWELS = ["Square2", "Square3"];
 
 function countVowels(characters){
   let n = 0;
@@ -512,12 +515,41 @@ function lockPiece(){
 
   cur = null;
   Sound.lock();
+  const scoreBefore = score;
   judge(minY, maxY).then(function(){
     if (garbageLeft <= 0){ gameOver(true); return; }
+
+    // A clear resets the rising-garbage counter; otherwise every 10th piece
+    // pushes a fresh brick row up from the bottom.
+    if (score > scoreBefore){
+      piecesSinceClear = 0;
+    } else {
+      piecesSinceClear++;
+      if (piecesSinceClear >= GARBAGE_RISE_AFTER){
+        piecesSinceClear = 0;
+        riseGarbage();
+        if (reachRoof()){ gameOver(false); return; }
+      }
+    }
+
     // Any block reaching the top row means the stack topped out.
     if (reachRoof()){ gameOver(false); return; }
     spawn();
   });
+}
+
+/* Push one brick row in at the bottom; the whole board shifts up by one row.
+   Returns false if the shift would push an occupied cell off the top. */
+function riseGarbage(){
+  const top = saved.shift();              // drop the topmost row
+  let overflow = false;
+  for (let x = 0; x < COLS; x++){ if (top[x] !== 0) overflow = true; }
+  saved.push(new Array(COLS).fill(-1));   // new brick row at the bottom
+  garbageLeft++;
+  Sound.garbage();
+  paintBricks();
+  render();
+  return !overflow;
 }
 
 /* ============================================================ LINE CLEAR
@@ -552,10 +584,21 @@ function dictFetch(key, attempt){
 
     if (res.status === 200){
       return res.json().then(function(data){
-        // English definitions live under data.en; other languages may exist
+        /* Only an ENGLISH entry counts. Wiktionary keeps place names and given
+           names under other language sections, so a word whose `en` section is
+           missing (or empty) exists only as a proper noun: LONDON, BOSTON,
+           ALICE and ENIAC all come back with no English definitions, while
+           BOSS, SMITH and CHINA do because they are ordinary nouns too. */
         const en = data && data.en;
-        const ok = !!(en && en.length);
-        return { verdict: ok ? true : false, definitive: true };
+        if (!en || !en.length) return { verdict: false, definitive: true };
+
+        // Reject entries that carry no usable definition text either.
+        let hasDefinition = false;
+        for (let i = 0; i < en.length && !hasDefinition; i++){
+          const defs = en[i] && en[i].definitions;
+          if (defs && defs.length) hasDefinition = true;
+        }
+        return { verdict: hasDefinition, definitive: true };
       });
     }
     if (res.status === 404) return { verdict: false, definitive: true };
@@ -631,92 +674,142 @@ function scanSet(y, slice){
 }
 function scanClear(){ Scan.active = false; Scan.row = -1; Scan.len = 0; Scan.text = ''; render(); }
 
+/* How many rows a found word eats, counting the word's own row.
+   2-3 letters -> 3 rows,  4+ letters -> 4 rows. */
+function rowsEatenFor(len){
+  return (len <= 3) ? 3 : 4;
+}
+
 function judge(minY, maxY){
   resolving = true;
-  // minY / maxY are kept for the caller but the scan covers the whole grid.
-  // Scan the WHOLE board. A word can be completed by letters that were already
-  // sitting anywhere - not just next to where the piece landed - so a local
-  // window always leaves some behind. A full pass with a per-session lookup
-  // cache costs little: each distinct slice is only fetched once.
   const from = 0;
   const to = ROWS - 1;
-  const used = {};                 // row slots already scored this pass
-  return pass(from, to).then(function(){
+
+  /* Rounds of scanning.
+     Round 1 finds every word currently on the board. Deleting those rows shifts
+     everything down, which can butt two halves of a word together, so we scan
+     again - but a word is only ever scored ONCE per resolve. The seen set is
+     keyed by the letters, not by position, because clearing a row moves letters
+     to a new row and would otherwise look like a brand new word. */
+  const scored = {};
+
+  function round(){
+    const hits = [];
+    return pass(hits, from, to).then(function(){
+      if (!hits.length) return;          // nothing left - settled
+      applyHits(hits, scored);
+      return round();
+    });
+  }
+
+  return round().then(function(){
     resolving = false;
     scanClear();
   });
 
-  function rowKey(y){ return saved[y].join(','); }
-
-  function pass(a, b){
+  function pass(hits, a, b){
     if (a > to) return Promise.resolve();
 
     for (let y = a; y <= b; y++){
-      // A slot is "done" only while its contents are unchanged. Once rows
-      // shift, the slot holds different data and is fair game again.
-      const k = y + ':' + rowKey(y);
-      if (used[k]) continue;
       const slices = rowSlices(saved[y]);
-      if (slices.length) return trySlice(y, slices, 0);
+      if (slices.length) return trySlice(hits, y, slices, 0);
     }
-    return pass(a + 1, b);
+    return pass(hits, a + 1, b);
   }
 
-  function trySlice(y, slices, k){
-    if (k >= slices.length) return pass(y + 1, to);
+  function trySlice(hits, y, slices, k){
+    if (k >= slices.length) return pass(hits, y + 1, to);
 
     const s = slices[k];
-    scanSet(y, s);                 // show which slice is being tested
+    scanSet(y, s);
     return isVocab(s.text).then(function(hit){
-      if (!hit) return trySlice(y, slices, k + 1);
-
-      // Clear the word row FIRST, then check whether a brick row has slid into
-      // the slot directly beneath it. Doing the brick removal first used to
-      // shift the whole board down and let the same letters be scored twice.
-      saved.splice(y, 1);
-      saved.unshift(new Array(COLS).fill(0));
-
-      // A brick row that is now directly under the cleared slot gets consumed,
-      // which is how the player saws through the 3 brick layers and wins.
-      const below = y + 1;
-      if (below < ROWS){
-        let allBrick = true;
-        for (let x = 0; x < COLS; x++){ if (saved[below][x] !== -1) allBrick = false; }
-        if (allBrick){
-          garbageLeft = Math.max(0, garbageLeft - 1);
-          Sound.brick();
-          saved.splice(below, 1);
-          // Re-pad so the grid stays ROWS tall.
-          saved.unshift(new Array(COLS).fill(0));
+      if (hit){
+        // Found one - do NOT quit. Record it and keep going: a second word
+        // further right on the same row still counts, and the rest of the
+        // board has not been looked at yet.
+        if (!scored[s.text]){
+          hits.push({ y: y, x: s.x, len: s.len, text: s.text });
         }
+        const rest = slices.filter(function(q){
+          return q.x > s.x && q.text !== s.text;
+        });
+        if (rest.length) return trySlice(hits, y, rest, 0);
+        return pass(hits, y + 1, to);
       }
-
-      score += s.len * 100;
-      const entry = { word: s.text.toUpperCase(), zh: '', pts: s.len * 100 };
-      found.unshift(entry);
-      if (found.length > 5) found.pop();
-      message = 'Found "' + s.text.toUpperCase() + '"  +' + (s.len * 100);
-      refreshHUD();
-      showToast(s.text.toUpperCase(), '');
-      Sound.word(s.len);
-      Speech.say(s.text);
-      paintBricks();
-
-      // fetch the Chinese meaning, then show it in the toast and the list
-      translate(s.text).then(function(zh){
-        if (!zh) return;
-        entry.zh = zh;
-        showToast(s.text.toUpperCase(), zh);
-        refreshHUD();
-      });
-
-      // Slot y was cleared. Rows above it shifted down, so anything that lands
-      // in y is a NEW row and may legitimately score. Rescan the whole window;
-      // the `used` map prevents the same slot+contents from scoring twice.
-      used[y + ':' + saved[y].join(',')] = 1;
-      return pass(from, to);
+      return trySlice(hits, y, slices, k + 1);
     });
   }
+}
+
+/* Delete every collected word. A row is removed once, but EVERY word found on
+   it scores - a row holding both CATS and DEER earns for both. Rows are dealt
+   with from the lowest upward, and whatever sits below a cleared row goes with
+   it - brick or not. */
+function applyHits(hits, scored){
+  if (!hits.length) return;
+
+  // group by row
+  const byRow = {};
+  hits.forEach(function(h){
+    (byRow[h.y] = byRow[h.y] || []).push(h);
+  });
+
+  // lowest row first
+  const rows = Object.keys(byRow).map(Number).sort(function(a, b){ return b - a; });
+
+  rows.forEach(function(y){
+    const words = byRow[y];
+    if (y >= ROWS) return;
+    const rowNow = saved[y];
+    if (!rowNow) return;
+
+    // the largest word on this row decides how many rows go
+    let longest = words[0];
+    words.forEach(function(w){ if (w.len > longest.len) longest = w; });
+
+    const want = rowsEatenFor(longest.len);
+    for (let i = 0; i < want; i++){
+      const idx = y + i;
+      if (idx >= ROWS) break;
+      const row = saved[idx];
+      // grey rows count toward the win when they are removed
+      let allBrick = row.length > 0;
+      for (let x = 0; x < COLS; x++){ if (row[x] !== -1) allBrick = false; }
+      if (allBrick){
+        garbageLeft = Math.max(0, garbageLeft - 1);
+        bricksCleared++;
+      }
+      saved.splice(idx, 1);
+      saved.unshift(new Array(COLS).fill(0));
+    }
+
+    // score every distinct word on the row
+    words.forEach(function(h){
+      if (scored[h.text]) return;          // already paid for this word
+      scored[h.text] = 1;
+
+      score += h.len * 100;
+      const entry = { word: h.text.toUpperCase(), zh: '', pts: h.len * 100 };
+      found.unshift(entry);
+      if (found.length > 5) found.pop();
+
+      message = 'Found "' + h.text.toUpperCase() + '"  +' + (h.len * 100);
+      showToast(h.text.toUpperCase(), '');
+      Sound.word(h.len);
+      Speech.say(h.text);
+
+      translate(h.text).then(function(zh){
+        if (!zh) return;
+        entry.zh = zh;
+        showToast(h.text.toUpperCase(), zh);
+        refreshHUD();
+      });
+    });
+  });
+
+  refreshHUD();
+  paintBricks();
+  Sound.brick();
 }
 
 /* ============================================================ SOUND
@@ -765,6 +858,7 @@ const Sound = (function(){
     lock(){ tone(150, 0, 0.07, 'sine', 0.09); },
     word(len){ chime(len); },
     brick(){ tone(392, 0, 0.10, 'triangle', 0.14); tone(261.63, 0.07, 0.14, 'triangle', 0.14); },
+    garbage(){ tone(98, 0, 0.16, 'sawtooth', 0.10); tone(82.4, 0.10, 0.22, 'sawtooth', 0.10); },
     win(){
       [523.25, 659.25, 783.99, 1046.50].forEach(function(f, i){
         tone(f, i * 0.11, 0.30, 'triangle', 0.18);
@@ -1103,12 +1197,15 @@ function tick(){
 function resetGame(){
   saved = emptyGrid();
   garbageLeft = GARBAGE_ROWS;
+  bricksCleared = 0;
+  piecesSinceClear = 0;
   for (let r = 0; r < GARBAGE_ROWS; r++){
     const y = ROWS - 1 - r;
     for (let x = 0; x < COLS; x++) saved[y][x] = -1;
   }
   board = saved.map(function(r){ return r.slice(); });
-  score = 0;
+  score = 0;                         // NB: this used to be `let score = 0`, which
+                                     // shadowed the real score and never reset it
   found = [];
   wordCache && Object.keys(wordCache).forEach(function(k){ delete wordCache[k]; });
   dropTimer = 0;
@@ -1116,7 +1213,7 @@ function resetGame(){
   over = false; won = false; paused = false;
   resolving = false;
   cur = null;
-  message = 'Form 4+ letter words!';
+  message = 'Form 2+ letter words!';
   lastPhonicHeads = [];              // fresh anti-repeat window each game
   nextPiece = makePiece();
   paintBricks();
