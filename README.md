@@ -48,6 +48,13 @@ nothing to download, works offline. Move / rotate / lock have small blips, a
 found word plays a rising arpeggio that gets longer for longer words, and there
 are win and game-over jingles. The `SOUND` button mutes everything.
 
+## Pronunciation
+
+Each found word is read aloud with the browser's built-in speech synthesis
+(`speechSynthesis`) in an English voice — no audio files, no network, works
+offline. A `SPEAK` button mutes just the voice while leaving the sound effects
+on.
+
 ## Chinese translation
 
 Every word you find is translated to Traditional Chinese via Google's
