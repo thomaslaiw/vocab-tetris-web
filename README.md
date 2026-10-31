@@ -19,6 +19,8 @@ Play: open `index.html` in a browser, or visit the GitHub Pages link.
   4. four-letter phonics — `atch ight ound ouse`
 - A row clears when a contiguous slice of **4 or more** cells spells a real word.
   Only rows within 1 of where your piece landed are checked.
+- Slices are tested **longest first**, so a longer word always wins over a
+  shorter one hiding inside it.
 
 ## Anti-repeat
 

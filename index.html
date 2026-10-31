@@ -434,14 +434,16 @@ function isVocab(word){
 
 function rowSlices(line){
   const out = [];
-  for (let x = 0; x <= COLS - MIN_WORD; x++){
-    for (let xe = x + MIN_WORD; xe <= COLS; xe++){
-      const seg = line.slice(x, xe);
-      if (seg.indexOf(0) !== -1) continue;      // gaps break the word
-      out.push({ text: seg.join(''), x: x, len: seg.length });
+  // Longest first, then left to right. Equivalent to the requested reverse
+  // walk `for xen in range(w+1, x+5, -1)` but guarantees a strictly
+  // descending length order across ALL start positions.
+  for (let len = COLS; len >= MIN_WORD; len--){
+    for (let x = 0; x + len <= COLS; x++){
+      const seg = line.slice(x, x + len);
+      if (seg.indexOf(0) !== -1) continue;     // gaps break the word
+      out.push({ text: seg.join(''), x: x, len: len });
     }
   }
-  out.sort(function(a, b){ return b.len - a.len; });   // longest first
   return out;
 }
 
