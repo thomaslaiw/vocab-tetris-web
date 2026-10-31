@@ -29,6 +29,15 @@ original). A new piece will not reuse a head phonics still inside that window â€
 candidates are tried in shuffled order, and only when the whole pool is already
 recent does it fall back to the least-recently-used one.
 
+## Touch controls
+
+A **W/A/S/D pad** is overlaid on the bottom-centre of the board, in a cross
+layout: `W` rotates, `A` / `D` move, `S` soft-drops. Holding `A` / `D` / `S`
+repeats. It is semi-transparent so it does not hide the bricks behind it, and
+brightens on touch.
+
+On narrow screens a wider five-button pad also appears below the sidebar.
+
 ## Controls
 
 | Key | Action |
