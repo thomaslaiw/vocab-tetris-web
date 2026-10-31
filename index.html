@@ -213,16 +213,45 @@ function emptyGrid(){ return Array.from({length: ROWS}, () => new Array(COLS).fi
    Fixed here: skip the shared cell on write, and match the letter by POSITION
    not by mere containment.
    ============================================================ */
+/* Anti-repeat: the last 10 PRIMARY phonics used are remembered so the same
+   head phonics does not come up over and over. Mirrors `lastphonicheads`
+   in the Python original. */
+const RECENT_HEADS_MAX = 11;          // python trims when len > 10
+let lastPhonicHeads = [];
+
 function buildCharacters(shape){
   let maxId = 0;
   shape.grps.forEach(function(g){ maxId = Math.max(maxId, Math.max.apply(null, g)); });
 
   const characters = new Array(maxId + 1).fill(0);
+  const phonics = [];
 
   // primary group
   const pool0 = PHONICSETS[String(shape.grps[0].length)] || [];
   if (!pool0.length) return null;
-  const p0 = pool0[Math.floor(Math.random() * pool0.length)];
+
+  // Reject a primary phonics still inside the recent window. Try every
+  // candidate in a shuffled order first so small pools (the 4-letter group has
+  // only 4 entries) still find a fresh one; only fall back to a repeat when the
+  // entire pool is already recent.
+  const pool = pool0.slice().sort(function(){ return Math.random() - 0.5; });
+  let p0 = null;
+  for (let i = 0; i < pool.length; i++){
+    if (lastPhonicHeads.indexOf(pool[i]) === -1){ p0 = pool[i]; break; }
+  }
+  if (p0 === null){
+    // whole pool is recent: take the least-recently used one
+    let best = pool0[0], bestAge = -1;
+    pool0.forEach(function(c){
+      const idx = lastPhonicHeads.lastIndexOf(c);
+      if (idx === -1) { best = c; bestAge = Infinity; return; }
+      const age = lastPhonicHeads.length - idx;
+      if (age > bestAge){ bestAge = age; best = c; }
+    });
+    p0 = best;
+  }
+
+  phonics.push(p0);
   shape.grps[0].forEach(function(cid, i){ characters[cid] = p0[i] || ''; });
 
   for (let gi = 1; gi < shape.grps.length; gi++){
@@ -230,7 +259,9 @@ function buildCharacters(shape){
 
     if (grp.length === 1){
       const pool = PHONICSETS['1'];
-      characters[grp[0]] = pool[Math.floor(Math.random() * pool.length)];
+      const p = pool[Math.floor(Math.random() * pool.length)];
+      phonics.push(p);
+      characters[grp[0]] = p;
       continue;
     }
 
@@ -244,8 +275,8 @@ function buildCharacters(shape){
     if (!pool.length) return null;
 
     if (shareCid === -1){
-      // independent line
       const p = pool[Math.floor(Math.random() * pool.length)];
+      phonics.push(p);
       grp.forEach(function(cid, i){ characters[cid] = p[i] || ''; });
       continue;
     }
@@ -258,13 +289,20 @@ function buildCharacters(shape){
     if (!candidates.length) return null;
 
     const p = candidates[Math.floor(Math.random() * candidates.length)];
+    phonics.push(p);
     grp.forEach(function(cid, i){
       if (cid === shareCid) return;              // never clobber the shared cell
       characters[cid] = p[i] || '';
     });
   }
 
-  return characters;
+  return { characters: characters, phonics: phonics, head: p0 };
+}
+
+/* keep the rolling window of recent head phonics */
+function rememberHead(head){
+  lastPhonicHeads.push(head);
+  while (lastPhonicHeads.length > RECENT_HEADS_MAX) lastPhonicHeads.shift();
 }
 
 function pieceFrom(shapeName, characters){
@@ -295,19 +333,30 @@ function makePiece(typeName){
 
   for (let i = 0; i < order.length; i++){
     for (let attempt = 0; attempt < 2500; attempt++){
-      const chars = buildCharacters(SHAPES[order[i]]);
-      if (chars) return pieceFrom(order[i], chars);
+      const built = buildCharacters(SHAPES[order[i]]);
+      if (built){
+        rememberHead(built.head);
+        const piece = pieceFrom(order[i], built.characters);
+        piece.phonics = built.phonics;
+        return piece;
+      }
     }
   }
 
   // Nothing built (should not happen): a Line with single letters always works
   const shape = SHAPES.Line;
   const chars = ['', '', '', '', ''];
+  const phonics = [];
   shape.grps[0].forEach(function(cid, i){
     const pool = PHONICSETS['1'];
-    chars[cid] = pool[Math.floor(Math.random() * pool.length)];
+    const p = pool[Math.floor(Math.random() * pool.length)];
+    phonics.push(p);
+    chars[cid] = p;
   });
-  return pieceFrom('Line', chars);
+  rememberHead(phonics[0]);
+  const piece = pieceFrom('Line', chars);
+  piece.phonics = phonics;
+  return piece;
 }
 
 function formOf(p){ return p.shape.forms[p.r]; }
@@ -639,6 +688,7 @@ function resetGame(){
   resolving = false;
   cur = null;
   message = 'Form 4+ letter words!';
+  lastPhonicHeads = [];              // fresh anti-repeat window each game
   nextPiece = makePiece();
   paintBricks();
   refreshHUD();

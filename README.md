@@ -20,6 +20,13 @@ Play: open `index.html` in a browser, or visit the GitHub Pages link.
 - A row clears when a contiguous slice of **4 or more** cells spells a real word.
   Only rows within 1 of where your piece landed are checked.
 
+## Anti-repeat
+
+The last **10 primary phonics** used are remembered (`lastphonicheads` in the
+original). A new piece will not reuse a head phonics still inside that window —
+candidates are tried in shuffled order, and only when the whole pool is already
+recent does it fall back to the least-recently-used one.
+
 ## Controls
 
 | Key | Action |
