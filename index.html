@@ -504,8 +504,11 @@ function rowSlices(line){
 
 function judge(minY, maxY){
   resolving = true;
-  const from = Math.max(0, minY - 1);
-  const to = Math.min(ROWS - 1, maxY + 1);
+  // Check exactly the rows the landed piece occupies - a 2x2 covers 2 rows, a
+  // 1x4 covers 4. No +/-1 padding: the piece's own span is what the player just
+  // changed, so that is what gets verified.
+  const from = Math.max(0, minY);
+  const to = Math.min(ROWS - 1, maxY);
   const used = {};                 // row slots already scored this pass
   return pass(from, to).then(function(){ resolving = false; });
 
