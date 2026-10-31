@@ -150,7 +150,8 @@
         A row whose letters spell a real word → cleared<br>
         The whole board is checked after every piece<br><br>
         <b>Goal</b><br>
-        Clear the 3 grey brick rows at the bottom.<br><br>
+        Score as high as you can. The grey rows keep rebuilding, so there is
+        no finish line - just your best run.<br><br>
         <span id="kbHint"><kbd>←</kbd><kbd>→</kbd> move <kbd>↓</kbd> drop <kbd>↑</kbd> rotate <kbd>Space</kbd> slam <kbd>P</kbd> pause</span>
       </div>
       <button id="ovBtn">Start</button>
@@ -158,7 +159,11 @@
   </div>
 
   <div id="side">
-    <div class="box"><div class="label">Score</div><div class="val" id="score">0</div></div>
+    <div class="box">
+      <div class="label">Score</div>
+      <div class="val" id="score">0</div>
+      <div class="best" id="best">Best 0</div>
+    </div>
 
     <div class="box" style="text-align:center">
       <div class="label" style="text-align:left">Next</div>
@@ -166,7 +171,7 @@
     </div>
 
     <div id="goal">
-      <div class="label">Bricks left</div>
+      <div class="label">Brick floor</div>
       <div id="goalRow">
         <div class="brick" id="b0"></div>
         <div class="brick" id="b1"></div>
@@ -517,7 +522,8 @@ function lockPiece(){
   Sound.lock();
   const scoreBefore = score;
   judge(minY, maxY).then(function(){
-    if (garbageLeft <= 0){ gameOver(true); return; }
+    // Clearing the grey rows does not win any more: this is an endless
+    // score-chase. The bricks are just an obstacle that keeps rebuilding.
 
     // A clear resets the rising-garbage counter; otherwise every 10th piece
     // pushes a fresh brick row up from the bottom.
@@ -536,6 +542,23 @@ function lockPiece(){
     if (reachRoof()){ gameOver(false); return; }
     spawn();
   });
+}
+
+/* Endless mode: keep the brick floor topped up to GARBAGE_ROWS. Rows are added
+   at the bottom, so the board shifts up exactly as much as was eaten. */
+function topUpBricks(){
+  let guard = 0;
+  while (garbageLeft < GARBAGE_ROWS && guard++ < GARBAGE_ROWS + 2){
+    const top = saved.shift();
+    saved.push(new Array(COLS).fill(-1));
+    garbageLeft++;
+    // if the shifted-off row had anything in it we are dangerously high, but
+    // reachRoof() after the resolve handles that case
+    if (top && top.some(function(v){ return v !== 0; })){ garbageLeft = GARBAGE_ROWS; break; }
+  }
+  garbageLeft = Math.max(garbageLeft, GARBAGE_ROWS);
+  bricksCleared = Math.max(0, bricksCleared);
+  paintBricks();
 }
 
 /* Push one brick row in at the bottom; the whole board shifts up by one row.
@@ -772,7 +795,7 @@ function applyHits(hits, scored){
       const idx = y + i;
       if (idx >= ROWS) break;
       const row = saved[idx];
-      // grey rows count toward the win when they are removed
+      // grey rows are consumed like any other row
       let allBrick = row.length > 0;
       for (let x = 0; x < COLS; x++){ if (row[x] !== -1) allBrick = false; }
       if (allBrick){
@@ -782,6 +805,10 @@ function applyHits(hits, scored){
       saved.splice(idx, 1);
       saved.unshift(new Array(COLS).fill(0));
     }
+
+    // Endless mode: the brick floor is a permanent obstacle, so top it back up
+    // whenever a clear has eaten into it.
+    topUpBricks();
 
     // score every distinct word on the row
     words.forEach(function(h){
@@ -1229,22 +1256,37 @@ function startGame(){
   render();
 }
 
+const BEST_KEY = 'vocabTetrisBest';
+
+function loadBest(){
+  try {
+    const v = parseInt(localStorage.getItem(BEST_KEY) || '0', 10);
+    return isNaN(v) ? 0 : v;
+  } catch (e){ return 0; }
+}
+
+function saveBest(v){
+  try { localStorage.setItem(BEST_KEY, String(v)); } catch (e){}
+}
+
 function gameOver(winFlag){
   if (over) return;
-  over = true; running = false; cur = null; won = !!winFlag;
+  over = true; running = false; cur = null; won = false;
+
+  // Endless mode: only the score matters, so bank a new personal best.
+  const best = loadBest();
+  const isRecord = score > best;
+  if (isRecord) saveBest(score);
+
   const ov = document.getElementById('overlay');
   ov.classList.remove('hide');
-  if (winFlag){
-    Sound.win();
-    document.getElementById('ovTitle').textContent = 'CLEARED';
-    document.getElementById('ovBody').innerHTML =
-      'All three brick rows gone.<br>Score <b>' + score.toLocaleString() + '</b>';
-  } else {
-    Sound.over();
-    document.getElementById('ovTitle').textContent = 'GAME OVER';
-    document.getElementById('ovBody').innerHTML =
-      'Score <b>' + score.toLocaleString() + '</b><br>Brick rows left: <b>' + garbageLeft + '</b>';
-  }
+
+  Sound.over();
+  document.getElementById('ovTitle').textContent = isRecord ? 'NEW BEST' : 'GAME OVER';
+  document.getElementById('ovBody').innerHTML =
+    'Score <b>' + score.toLocaleString() + '</b><br>' +
+    (isRecord ? 'Personal best!' : 'Best: <b>' + best.toLocaleString() + '</b>');
+
   document.getElementById('ovRules').style.display = 'none';
   document.getElementById('ovBtn').textContent = 'Play again';
   render();
