@@ -33,14 +33,15 @@
   #msg{font-size:11.5px;line-height:1.5;color:#ffe66d;min-height:34px}
 
   #log{font-size:11px;line-height:1.5;color:#9a9ab0;min-height:52px}
-  #log div{display:flex;justify-content:space-between;gap:8px}
+  #log div{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
   #log b{color:#f0f0fa;font-weight:700;letter-spacing:.05em}
+  #log i.zh{color:#8f8fa8;font-style:normal;font-size:10.5px;margin-left:5px;flex:1}
   #log .pts{color:#4ecdc4;font-variant-numeric:tabular-nums}
 
-  #btns{display:flex;gap:8px}
+  #btns{display:flex;gap:6px}
   button{
-    flex:1;font:inherit;font-size:11px;letter-spacing:.07em;text-transform:uppercase;
-    padding:10px 8px;border-radius:5px;border:none;cursor:pointer;
+    flex:1;min-width:0;font:inherit;font-size:10px;letter-spacing:.04em;text-transform:uppercase;
+    padding:10px 4px;border-radius:5px;border:none;cursor:pointer;
     background:#2a2a3e;color:#e8e8f5;transition:background .12s;
   }
   button:hover{background:#35354e}
@@ -70,6 +71,11 @@
     text-shadow:0 0 26px rgba(78,205,196,.7),0 2px 10px rgba(0,0,0,.85);
   }
   #toast.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  #toast i{
+    display:block;font-style:normal;font-size:14px;font-weight:600;
+    letter-spacing:.16em;color:#e8e8f5;margin-top:5px;
+    text-shadow:0 2px 8px rgba(0,0,0,.9);
+  }
 
   #touch{display:none;gap:7px}
   #touch button{padding:15px 0;font-size:17px;letter-spacing:0}
@@ -134,6 +140,7 @@
 
     <div id="btns">
       <button id="btnPause">Pause</button>
+      <button id="btnSound">Sound</button>
       <button id="btnRestart">Reset</button>
     </div>
 
@@ -422,6 +429,7 @@ function lockPiece(){
     }
 
   cur = null;
+  Sound.lock();
   judge(minY, maxY).then(function(){
     if (garbageLeft <= 0){ gameOver(true); return; }
     // Any block reaching the top row means the stack topped out.
@@ -518,6 +526,7 @@ function judge(minY, maxY){
         for (let x = 0; x < COLS; x++){ if (saved[below][x] !== -1) allBrick = false; }
         if (allBrick){
           garbageLeft = Math.max(0, garbageLeft - 1);
+          Sound.brick();
           saved.splice(below, 1);
           // Re-pad so the grid stays ROWS tall.
           saved.unshift(new Array(COLS).fill(0));
@@ -525,12 +534,22 @@ function judge(minY, maxY){
       }
 
       score += s.len * 100;
-      found.unshift({ word: s.text.toUpperCase(), pts: s.len * 100 });
+      const entry = { word: s.text.toUpperCase(), zh: '', pts: s.len * 100 };
+      found.unshift(entry);
       if (found.length > 5) found.pop();
       message = 'Found "' + s.text.toUpperCase() + '"  +' + (s.len * 100);
       refreshHUD();
-      showToast(s.text.toUpperCase());
+      showToast(s.text.toUpperCase(), '');
+      Sound.word(s.len);
       paintBricks();
+
+      // fetch the Chinese meaning, then show it in the toast and the list
+      translate(s.text).then(function(zh){
+        if (!zh) return;
+        entry.zh = zh;
+        showToast(s.text.toUpperCase(), zh);
+        refreshHUD();
+      });
 
       // Slot y was cleared. Rows above it shifted down, so anything that lands
       // in y is a NEW row and may legitimately score. Rescan the whole window;
@@ -539,6 +558,105 @@ function judge(minY, maxY){
       return pass(from, to);
     });
   }
+}
+
+/* ============================================================ SOUND
+   Everything is synthesised with the Web Audio API, so the game stays a single
+   file with no external assets and works offline. */
+const Sound = (function(){
+  let ctx = null;
+  let muted = false;
+
+  function ac(){
+    if (!ctx){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+
+  /* one shaped tone */
+  function tone(freq, start, dur, type, vol){
+    const c = ac();
+    if (!c || muted) return;
+    const t0 = c.currentTime + start;
+    const osc = c.createOscillator();
+    const gain = c.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(vol || 0.18, t0 + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(gain); gain.connect(c.destination);
+    osc.start(t0); osc.stop(t0 + dur + 0.02);
+  }
+
+  /* a short rising arpeggio; higher = better clear */
+  function chime(count){
+    const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];   // C E G C E
+    const n = Math.max(2, Math.min(count || 2, notes.length));
+    for (let i = 0; i < n; i++) tone(notes[i], i * 0.055, 0.16, 'triangle', 0.16);
+  }
+
+  return {
+    move(){ tone(220, 0, 0.035, 'square', 0.045); },
+    rotate(){ tone(330, 0, 0.045, 'square', 0.05); },
+    lock(){ tone(150, 0, 0.07, 'sine', 0.09); },
+    word(len){ chime(len); },
+    brick(){ tone(392, 0, 0.10, 'triangle', 0.14); tone(261.63, 0.07, 0.14, 'triangle', 0.14); },
+    win(){
+      [523.25, 659.25, 783.99, 1046.50].forEach(function(f, i){
+        tone(f, i * 0.11, 0.30, 'triangle', 0.18);
+      });
+    },
+    over(){
+      [392, 329.63, 261.63, 196].forEach(function(f, i){
+        tone(f, i * 0.13, 0.34, 'sine', 0.16);
+      });
+    },
+    toggle(){
+      muted = !muted;
+      if (!muted) tone(660, 0, 0.05, 'sine', 0.08);
+      return muted;
+    },
+    get muted(){ return muted; }
+  };
+})();
+
+/* ============================================================ TRANSLATION
+   Google's key-less translate endpoint, same one the sheet uses. Results are
+   cached so a word is only fetched once per session. */
+const TRANS_URL = 'https://translate.googleapis.com/translate_a/single';
+const transCache = {};
+
+function translate(word){
+  const key = word.toLowerCase();
+  if (transCache[key] !== undefined) return Promise.resolve(transCache[key]);
+
+  const url = TRANS_URL + '?client=gtx&sl=en&tl=zh-TW&dt=t&q=' + encodeURIComponent(key);
+  let ctrl = null;
+  try { ctrl = new AbortController(); } catch (e) { ctrl = null; }
+  const timer = setTimeout(function(){ if (ctrl) ctrl.abort(); }, 4000);
+
+  return fetch(url, { method: 'GET', signal: ctrl ? ctrl.signal : undefined })
+    .then(function(res){
+      clearTimeout(timer);
+      if (!res.ok) throw new Error('bad status');
+      return res.json();
+    })
+    .then(function(data){
+      const zh = data && data[0] && data[0][0] ? data[0][0][0] : '';
+      const out = zh || '';
+      transCache[key] = out;
+      return out;
+    })
+    .catch(function(){
+      clearTimeout(timer);
+      transCache[key] = '';
+      return '';
+    });
 }
 
 /* ---------------------------------------------------------------- render */
@@ -662,16 +780,18 @@ function refreshHUD(){
   document.getElementById('score').textContent = score.toLocaleString();
   document.getElementById('msg').textContent = message;
   document.getElementById('log').innerHTML = found.map(function(f){
-    return '<div><b>' + f.word + '</b><span class="pts">+' + f.pts + '</span></div>';
+    const zh = f.zh ? '<i class="zh">' + f.zh + '</i>' : '';
+    return '<div><b>' + f.word + '</b>' + zh +
+           '<span class="pts">+' + f.pts + '</span></div>';
   }).join('');
 }
 
-function showToast(text){
+function showToast(text, zh){
   const t = document.getElementById('toast');
-  t.textContent = text;
+  t.innerHTML = text + (zh ? '<i>' + zh + '</i>' : '');
   t.classList.add('on');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(function(){ t.classList.remove('on'); }, 900);
+  toastTimer = setTimeout(function(){ t.classList.remove('on'); }, 1100);
 }
 
 /* ---------------------------------------------------------------- movement */
@@ -680,7 +800,7 @@ function live(){ return running && !paused && !over && !resolving; }
 function move(dx){
   if (!live()) return;
   const form = formOf(cur);
-  if (!collide(form, cur.x + dx, cur.y)){ cur.x += dx; render(); }
+  if (!collide(form, cur.x + dx, cur.y)){ cur.x += dx; Sound.move(); render(); }
 }
 
 function rotate(){
@@ -700,6 +820,7 @@ function rotate(){
         cur.r = nextR;
         cur.x += k;
         cur.y += dy;
+        Sound.rotate();
         render();
         return;
       }
@@ -773,10 +894,12 @@ function gameOver(winFlag){
   const ov = document.getElementById('overlay');
   ov.classList.remove('hide');
   if (winFlag){
+    Sound.win();
     document.getElementById('ovTitle').textContent = 'CLEARED';
     document.getElementById('ovBody').innerHTML =
       'All three brick rows gone.<br>Score <b>' + score.toLocaleString() + '</b>';
   } else {
+    Sound.over();
     document.getElementById('ovTitle').textContent = 'GAME OVER';
     document.getElementById('ovBody').innerHTML =
       'Score <b>' + score.toLocaleString() + '</b><br>Brick rows left: <b>' + garbageLeft + '</b>';
@@ -819,6 +942,10 @@ document.getElementById('ovBtn').addEventListener('click', function(){
   else startGame();
 });
 document.getElementById('btnPause').addEventListener('click', togglePause);
+document.getElementById('btnSound').addEventListener('click', function(){
+  const muted = Sound.toggle();
+  this.textContent = muted ? 'Muted' : 'Sound';
+});
 document.getElementById('btnRestart').addEventListener('click', function(){ startGame(); });
 
 function doAction(act){

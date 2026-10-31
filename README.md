@@ -41,6 +41,20 @@ recent does it fall back to the least-recently-used one.
 
 Touch buttons appear on small screens.
 
+## Sound
+
+Sound effects are synthesised live with the **Web Audio API** — no audio files,
+nothing to download, works offline. Move / rotate / lock have small blips, a
+found word plays a rising arpeggio that gets longer for longer words, and there
+are win and game-over jingles. The `SOUND` button mutes everything.
+
+## Chinese translation
+
+Every word you find is translated to Traditional Chinese via Google's
+key-less translate endpoint (`translate.googleapis.com`) and shown next to the
+word in the **Words** panel and in the centre toast. Results are cached, and a
+failed translation never blocks a clear.
+
 ## Word checking
 
 Words are verified against [dictionaryapi.dev](https://dictionaryapi.dev/). Results
