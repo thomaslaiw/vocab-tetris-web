@@ -517,11 +517,6 @@ function judge(minY, maxY){
       // Clear the word row FIRST, then check whether a brick row has slid into
       // the slot directly beneath it. Doing the brick removal first used to
       // shift the whole board down and let the same letters be scored twice.
-      // Fire the visuals BEFORE the row is removed: fxRowClear reads saved[y]
-      // to know which letters were on it, so it has to run first.
-      fxRowClear(y);
-      fxFloatScore('+' + (s.len * 100), y);
-
       saved.splice(y, 1);
       saved.unshift(new Array(COLS).fill(0));
 
@@ -746,214 +741,8 @@ function drawBrick(g, x, y, size){
   g.strokeRect(px + 1.5, py + 1.5, size - 3, size - 3);
 }
 
-/* ============================================================ EFFECTS
-   Four lightweight canvas effects, all driven off one requestAnimationFrame
-   loop so they never fight with the game tick:
-     trail   - fading copies of the active piece as it drops
-     flash   - a cleared row flashes white then collapses
-     sparks  - particles burst out of each cleared cell
-     float   - the score for a word drifts upward and fades
-   ============================================================ */
-const FX = {
-  trail: [],     // {x, y, cells:[{cx,cy,ch}], life, max}
-  flash: [],     // {y, life, max}
-  sparks: [],    // {x, y, vx, vy, life, max, hue}
-  floats: [],    // {text, x, y, life, max}
-  glyphs: [],    // {text, x, y, vx, vy, rot, vrot, life} - letters flying off a clear
-  shake: 0       // board shake amount, decays
-};
-
-function fxClear(){
-  FX.trail.length = 0; FX.flash.length = 0; FX.sparks.length = 0;
-  FX.floats.length = 0; FX.glyphs.length = 0; FX.shake = 0;
-}
-
-/* remember where the piece was so we can paint a fading trail */
-function fxTrailFromPiece(p){
-  if (!p) return;
-  const form = formOf(p);
-  const cells = [];
-  for (let y = 0; y < form.length; y++)
-    for (let x = 0; x < form[y].length; x++){
-      const id = form[y][x];
-      if (!id) continue;
-      cells.push({ cx: p.x + x, cy: p.y + y, ch: p.characters[id] });
-    }
-  if (!cells.length) return;
-  FX.trail.push({ cells: cells, life: 1 });
-  if (FX.trail.length > 6) FX.trail.shift();
-}
-
-/* a whole row clears: white flash + sparks from every cell */
-function fxRowClear(y){
-  FX.flash.push({ y: y, life: 1 });
-
-  // Fly each letter off the cleared row: it spins, drifts up and outward,
-  // and fades. This is the readable part of the effect - you can still see
-  // which letters made the word.
-  let flyers = 0;
-  for (let x = 0; x < COLS; x++){
-    const v = saved[y] && saved[y][x];
-    if (v === 0) continue;
-    if (v !== -1){
-      FX.glyphs.push({
-        text: String(v),
-        x: (x + 0.5) * CELL,
-        y: (y + 0.5) * CELL,
-        vx: (x - COLS / 2) * 0.30 + (Math.random() - 0.5) * 1.4,
-        vy: -2.2 - Math.random() * 1.6,
-        rot: (Math.random() - 0.5) * 0.5,
-        vrot: (Math.random() - 0.5) * 0.16,
-        life: 1
-      });
-      flyers++;
-    }
-    for (let k = 0; k < 4; k++){
-      FX.sparks.push({
-        x: (x + 0.5) * CELL,
-        y: (y + 0.5) * CELL,
-        vx: (Math.random() - 0.5) * 3.2,
-        vy: -Math.random() * 3.4 - 0.6,
-        life: 1,
-        hue: v === -1 ? 220 : 172
-      });
-    }
-  }
-  FX.shake = Math.min(6, FX.shake + 3 + flyers * 0.2);
-}
-
-function fxFloatScore(text, y){
-  FX.floats.push({
-    text: text,
-    x: cv.width / 2,
-    y: Math.max(CELL * 2, y * CELL),
-    life: 1
-  });
-}
-
-/* draw the effects; called after the board so they sit on top */
-function fxDraw(){
-  // trail: ghost copies of recent positions
-  for (let i = 0; i < FX.trail.length; i++){
-    const t = FX.trail[i];
-    const a = (i + 1) / (FX.trail.length + 2) * 0.30;
-    ctx.globalAlpha = a;
-    for (let k = 0; k < t.cells.length; k++){
-      const c = t.cells[k];
-      if (c.cy < 0 || c.cy >= ROWS || c.cx < 0 || c.cx >= COLS) continue;
-      ctx.fillStyle = PHONIC_COLOR;
-      ctx.fillRect(c.cx * CELL + 2, c.cy * CELL + 2, CELL - 4, CELL - 4);
-    }
-    ctx.globalAlpha = 1;
-  }
-
-  // row flash - a teal band rather than pure white, so the flying letters
-  // stay readable on top of it
-  for (let i = FX.flash.length - 1; i >= 0; i--){
-    const f = FX.flash[i];
-    const a = Math.max(0, f.life) * 0.55;
-    const grad = ctx.createLinearGradient(0, f.y * CELL, 0, (f.y + 1) * CELL);
-    grad.addColorStop(0, 'rgba(120,255,240,0)');
-    grad.addColorStop(0.5, 'rgba(120,255,240,' + a + ')');
-    grad.addColorStop(1, 'rgba(120,255,240,0)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, f.y * CELL - CELL * 0.35, cv.width, CELL * 1.7);
-    f.life -= 0.09;
-    if (f.life <= 0) FX.flash.splice(i, 1);
-  }
-
-  // particles
-  for (let i = FX.sparks.length - 1; i >= 0; i--){
-    const s = FX.sparks[i];
-    ctx.globalAlpha = Math.max(0, s.life);
-    ctx.fillStyle = 'hsl(' + s.hue + ',90%,' + (58 + s.life * 22) + '%)';
-    const r = 1.6 + s.life * 2.4;
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-
-    s.x += s.vx; s.y += s.vy; s.vy += 0.22; s.vx *= 0.985;
-    s.life -= 0.028;
-    if (s.life <= 0) FX.sparks.splice(i, 1);
-  }
-
-  // letters flying off the cleared row
-  for (let i = FX.glyphs.length - 1; i >= 0; i--){
-    const g = FX.glyphs[i];
-    ctx.save();
-    ctx.globalAlpha = Math.max(0, Math.min(1, g.life * 1.6));
-    ctx.translate(g.x, g.y);
-    ctx.rotate(g.rot);
-    ctx.font = '900 ' + Math.round(CELL * 0.72) + 'px -apple-system,"Segoe UI",Roboto,Arial,sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    // dark outline behind the glow so the letter reads against anything
-    ctx.lineWidth = Math.max(3, CELL * 0.16);
-    ctx.strokeStyle = 'rgba(10,12,20,.92)';
-    ctx.shadowBlur = 0;
-    ctx.strokeText(g.text, 0, 0);
-
-    // hot white core with a cyan halo
-    ctx.shadowColor = 'rgba(120,255,240,1)';
-    ctx.shadowBlur = 22;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(g.text, 0, 0);
-    ctx.shadowBlur = 0;
-    ctx.restore();
-
-    g.x += g.vx; g.y += g.vy;
-    g.vy += 0.09;
-    g.vx *= 0.985;
-    g.rot += g.vrot;
-    g.life -= 0.014;
-    if (g.life <= 0) FX.glyphs.splice(i, 1);
-  }
-
-  // floating score text
-  for (let i = FX.floats.length - 1; i >= 0; i--){
-    const f = FX.floats[i];
-    const rise = (1 - f.life) * 46;
-    ctx.globalAlpha = Math.min(1, f.life * 1.4);
-    ctx.fillStyle = '#4ecdc4';
-    ctx.font = '800 ' + Math.round(CELL * 0.95) + 'px -apple-system,"Segoe UI",Roboto,Arial,sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.shadowColor = 'rgba(78,205,196,.85)';
-    ctx.shadowBlur = 18;
-    ctx.fillText(f.text, f.x, f.y - rise);
-    ctx.shadowBlur = 0;
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'alphabetic';
-    ctx.globalAlpha = 1;
-    f.life -= 0.016;
-    if (f.life <= 0) FX.floats.splice(i, 1);
-  }
-}
-
-/* one animation frame for the effects layer */
-function fxTick(){
-  if (FX.trail.length || FX.flash.length || FX.sparks.length ||
-      FX.floats.length || FX.glyphs.length || FX.shake > 0){
-    // decay the drop trail a little each frame
-    for (let i = FX.trail.length - 1; i >= 0; i--){
-      FX.trail[i].life -= 0.06;
-      if (FX.trail[i].life <= 0) FX.trail.splice(i, 1);
-    }
-    if (FX.shake > 0) FX.shake *= 0.86;
-    render();
-  }
-  requestAnimationFrame(fxTick);
-}
-
-/* ---------------------------------------------------------------- render */
 function render(){
-  ctx.save();
-  if (FX.shake > 0.35){
-    ctx.translate((Math.random() - 0.5) * FX.shake, (Math.random() - 0.5) * FX.shake);
-  }
-  ctx.clearRect(-8, -8, cv.width + 16, cv.height + 16);
+  ctx.clearRect(0, 0, cv.width, cv.height);
 
   ctx.strokeStyle = 'rgba(255,255,255,.05)';
   ctx.lineWidth = 1;
@@ -985,25 +774,22 @@ function render(){
       else drawCell(ctx, x, y, CELL, v, false);
     }
 
-  if (cur && !over){
-    // ghost
-    const form = formOf(cur);
-    let gy = cur.y, guard = 0;
-    while (!collide(form, cur.x, gy + 1) && guard++ < ROWS + 4) gy++;
-    if (gy > cur.y){
-      for (let y = 0; y < form.length; y++)
-        for (let x = 0; x < form[y].length; x++){
-          const id = form[y][x];
-          if (!id) continue;
-          const by = gy + y, bx = cur.x + x;
-          if (by >= 0 && by < ROWS && bx >= 0 && bx < COLS && saved[by][bx] === 0)
-            drawCell(ctx, bx, by, CELL, cur.characters[id], true);
-        }
-    }
-  }
+  if (!cur || over) return;
 
-  fxDraw();
-  ctx.restore();
+  // ghost
+  const form = formOf(cur);
+  let gy = cur.y, guard = 0;
+  while (!collide(form, cur.x, gy + 1) && guard++ < ROWS + 4) gy++;
+  if (gy > cur.y){
+    for (let y = 0; y < form.length; y++)
+      for (let x = 0; x < form[y].length; x++){
+        const id = form[y][x];
+        if (!id) continue;
+        const by = gy + y, bx = cur.x + x;
+        if (by >= 0 && by < ROWS && bx >= 0 && bx < COLS && saved[by][bx] === 0)
+          drawCell(ctx, bx, by, CELL, cur.characters[id], true);
+      }
+  }
 }
 
 function drawNext(){
@@ -1098,7 +884,6 @@ function hardDrop(){
   const form = formOf(cur);
   let guard = 0;
   while (!collide(form, cur.x, cur.y + 1) && guard++ < ROWS + 5) cur.y++;
-  fxTrailFromPiece(cur);
   lockPiece();
   render();
 }
@@ -1132,7 +917,6 @@ function resetGame(){
   cur = null;
   message = 'Form 4+ letter words!';
   lastPhonicHeads = [];              // fresh anti-repeat window each game
-  fxClear();                         // wipe any leftover particles
   nextPiece = makePiece();
   paintBricks();
   refreshHUD();
