@@ -35,6 +35,8 @@
   #log{font-size:11px;line-height:1.5;color:#9a9ab0;min-height:52px}
   #log div{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
   #log b{color:#f0f0fa;font-weight:700;letter-spacing:.05em}
+  #log i.zh.name{color:#6f6f86;opacity:.85}
+  #log i.zh.name em{font-size:9px;letter-spacing:.05em;opacity:.7}
   #log i.zh{color:#8f8fa8;font-style:normal;font-size:10.5px;margin-left:5px;flex:1}
   #log .pts{color:#4ecdc4;font-variant-numeric:tabular-nums}
 
@@ -825,10 +827,15 @@ function applyHits(hits, scored){
       Sound.word(h.len);
       Speech.say(h.text);
 
-      translate(h.text).then(function(zh){
-        if (!zh) return;
-        entry.zh = zh;
-        showToast(h.text.toUpperCase(), zh);
+      // The Chinese label is only shown when the word has a real English
+      // meaning. A name (Dell the company) would be misleading, so it is
+      // marked and rendered dim instead of pretending to be a definition.
+      translateDetail(h.text).then(function(d){
+        if (!d || !d.zh) return;
+        entry.zh = d.zh;
+        entry.nameOnly = !!d.dim;
+        entry.pos = d.pos || [];
+        showToast(h.text.toUpperCase(), d.dim ? '' : d.zh);
         refreshHUD();
       });
     });
@@ -906,19 +913,23 @@ const Sound = (function(){
 })();
 
 /* ============================================================ TRANSLATION
-   Google's key-less translate endpoint, same one the sheet uses. Results are
-   cached so a word is only fetched once per session. */
+   Google's key-less translate endpoint supplies the Chinese label, but a bare
+   machine translation happily returns brand names: "dell" comes back as
+   戴爾 (the computer company) instead of the actual noun, a small wooded
+   valley. So the label is cross-checked against the part of speech Wiktionary
+   reports, and when the entry only survives as a proper noun the translation is
+   dropped rather than shown misleadingly.
+   ============================================================ */
 const TRANS_URL = 'https://translate.googleapis.com/translate_a/single';
 const transCache = {};
+const posCache = {};
+const transDetail = {};
 
-function translate(word){
-  const key = word.toLowerCase();
-  if (transCache[key] !== undefined) return Promise.resolve(transCache[key]);
-
-  const url = TRANS_URL + '?client=gtx&sl=en&tl=zh-TW&dt=t&q=' + encodeURIComponent(key);
+function gtranslate(word, timeoutMs){
+  const url = TRANS_URL + '?client=gtx&sl=en&tl=zh-TW&dt=t&q=' + encodeURIComponent(word);
   let ctrl = null;
   try { ctrl = new AbortController(); } catch (e) { ctrl = null; }
-  const timer = setTimeout(function(){ if (ctrl) ctrl.abort(); }, 4000);
+  const timer = setTimeout(function(){ if (ctrl) ctrl.abort(); }, timeoutMs || 4000);
 
   return fetch(url, { method: 'GET', signal: ctrl ? ctrl.signal : undefined })
     .then(function(res){
@@ -927,16 +938,146 @@ function translate(word){
       return res.json();
     })
     .then(function(data){
-      const zh = data && data[0] && data[0][0] ? data[0][0][0] : '';
-      const out = zh || '';
-      transCache[key] = out;
-      return out;
+      return (data && data[0] && data[0][0]) ? String(data[0][0][0] || '') : '';
     })
     .catch(function(){
       clearTimeout(timer);
-      transCache[key] = '';
       return '';
     });
+}
+
+/* English past tense, enough for the regular cases plus the common irregulars.
+   Used to disambiguate a verb from a noun: "crane" alone translates as the
+   machine (起重機), but "craned" comes back as 伸長的 - the verb sense. */
+const IRREGULAR_PAST = {
+  be:'was', have:'had', do:'did', say:'said', go:'went', get:'got', make:'made',
+  know:'knew', think:'thought', take:'took', see:'saw', come:'came', want:'wanted',
+  use:'used', find:'found', give:'gave', tell:'told', work:'worked', call:'called',
+  try:'tried', ask:'asked', need:'needed', feel:'felt', become:'became', leave:'left',
+  put:'put', mean:'meant', keep:'kept', let:'let', begin:'began', seem:'seemed',
+  help:'helped', talk:'talked', turn:'turned', start:'started', show:'showed',
+  hear:'heard', play:'played', run:'ran', move:'moved', like:'liked', live:'lived',
+  believe:'believed', hold:'held', bring:'brought', happen:'happened', write:'wrote',
+  provide:'provided', sit:'sat', stand:'stood', lose:'lost', pay:'paid', meet:'met',
+  include:'included', continue:'continued', set:'set', learn:'learned', change:'changed',
+  lead:'led', understand:'understood', watch:'watched', follow:'followed', stop:'stopped',
+  create:'created', speak:'spoke', read:'read', spend:'spent', grow:'grew', open:'opened',
+  walk:'walked', win:'won', offer:'offered', remember:'remembered', love:'loved',
+  consider:'considered', appear:'appeared', buy:'bought', wait:'waited', serve:'served',
+  die:'died', send:'sent', expect:'expected', build:'built', stay:'stayed', fall:'fell',
+  cut:'cut', reach:'reached', kill:'killed', remain:'remained', suggest:'suggested',
+  raise:'raised', pass:'passed', sell:'sold', require:'required', report:'reported',
+  decide:'decided', pull:'pulled', return:'returned', explain:'explained', hope:'hoped',
+  develop:'developed', carry:'carried', break:'broke', receive:'received', agree:'agreed',
+  support:'supported', hit:'hit', produce:'produced', eat:'ate', cover:'covered',
+  catch:'caught', draw:'drew', choose:'chose', cause:'caused', point:'pointed',
+  listen:'listened', realise:'realised', realize:'realized', drive:'drove', wear:'wore',
+  sing:'sang', swim:'swam', fly:'flew', ride:'rode', hide:'hid', bite:'bit',
+  dig:'dug', hang:'hung', stick:'stuck', strike:'struck', shake:'shook', steal:'stole',
+  throw:'threw', wake:'woke', bear:'bore', beat:'beat', bend:'bent', blow:'blew',
+  burn:'burned', deal:'dealt', feed:'fed', fight:'fought', find:'found', forgot:'forgot',
+  freeze:'froze', hurt:'hurt', lend:'lent', light:'lit', seek:'sought', shine:'shone',
+  shoot:'shot', sleep:'slept', slide:'slid', smell:'smelled', spread:'spread',
+  spring:'sprang', sweep:'swept', tear:'tore', trap:'trapped', wear:'wore'
+};
+
+function toPast(word){
+  const w = word.toLowerCase();
+  if (IRREGULAR_PAST[w]) return IRREGULAR_PAST[w];
+  if (w.length < 2) return w + 'ed';
+
+  // consonant + y  ->  ied
+  if (/[^aeiou]y$/.test(w)) return w.slice(0, -1) + 'ied';
+
+  // CVC ending: double the final consonant (stop -> stopped, trap -> trapped)
+  if (/[^aeiou][aeiou][^aeiouwxy]$/.test(w) &&
+      w.length <= 5 &&
+      !/[aeiou]{2}/.test(w.slice(-3))) {
+    return w + w.slice(-1) + 'ed';
+  }
+
+  if (/e$/.test(w)) return w + 'd';           // use -> used
+  return w + 'ed';
+}
+
+/* Machine translation of a bare word is ambiguous: "dell" returns 戴爾 (the
+   company) and "crane" returns 起重機 (only the machine). Adding grammar that
+   only fits one reading makes Google pick the right sense:
+     noun -> "the dell"      (a thing, not a brand)
+     verb -> "craned"        (an action, not the tool)
+   */
+function translationProbe(word, pos){
+  const w = word.toLowerCase();
+  const hasNoun = pos.indexOf('Noun') !== -1;
+  const hasVerb = pos.indexOf('Verb') !== -1;
+
+  if (hasVerb && !hasNoun) return toPast(w);        // verb only
+  if (hasNoun) return 'the ' + w;                   // noun (or noun+verb: lean noun)
+  return w;
+}
+
+/* The parts of speech Wiktionary lists for an English word. An empty list means
+   the word exists only as a proper noun (a name), so a translation of it is a
+   brand or a place name, not a meaning. */
+function partsOfSpeech(word){
+  const key = word.toLowerCase();
+  if (posCache[key] !== undefined) return Promise.resolve(posCache[key]);
+
+  const url = 'https://en.wiktionary.org/api/rest_v1/page/definition/' + encodeURIComponent(key);
+  let ctrl = null;
+  try { ctrl = new AbortController(); } catch (e) { ctrl = null; }
+  const timer = setTimeout(function(){ if (ctrl) ctrl.abort(); }, 8000);
+
+  return fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' },
+                      signal: ctrl ? ctrl.signal : undefined })
+    .then(function(res){ clearTimeout(timer); return res.ok ? res.json() : null; })
+    .then(function(data){
+      const en = (data && data.en) || [];
+      const out = [];
+      en.forEach(function(e){
+        const pos = e && e.partOfSpeech;
+        if (pos && out.indexOf(pos) === -1) out.push(pos);
+      });
+      posCache[key] = out;
+      return out;
+    })
+    .catch(function(){ clearTimeout(timer); return null; });   // null = unknown
+}
+
+/* Returns { zh, pos, dim } where dim means "the label is a name, not a meaning". */
+function translateDetail(word){
+  const key = word.toLowerCase();
+  if (transDetail[key] !== undefined) return Promise.resolve(transDetail[key]);
+
+  return partsOfSpeech(key).then(function(pos){
+    // A name has no parts of speech at all - do not dress a brand up as a word.
+    if (pos && pos.length === 0){
+      const out = { zh: '', pos: [], dim: true };
+      transDetail[key] = out;
+      transCache[key] = '';
+      return out;
+    }
+
+    // Ask for the sense, not just the string: nouns get "the", verbs get the
+    // past tense, so Google stops answering with the brand name.
+    const probe = translationProbe(key, pos || []);
+    return gtranslate(probe).then(function(zh){
+      let label = zh || '';
+      // strip the article Google echoes back for "the X" probes
+      label = label.replace(/^(這|那|一個|一隻|一位)\s*/u, '').trim();
+      // "the dell" sometimes comes back as "the 山谷" - drop a stray article
+      label = label.replace(/^the\s+/i, '').trim();
+
+      const out = { zh: label, pos: pos || [], dim: false, probe: probe };
+      transDetail[key] = out;
+      transCache[key] = out.zh;
+      return out;
+    });
+  });
+}
+
+function translate(word){
+  return translateDetail(word).then(function(d){ return d.zh; });
 }
 
 /* ============================================================ SPEECH
@@ -1145,7 +1286,13 @@ function refreshHUD(){
   document.getElementById('score').textContent = score.toLocaleString();
   document.getElementById('msg').textContent = message;
   document.getElementById('log').innerHTML = found.map(function(f){
-    const zh = f.zh ? '<i class="zh">' + f.zh + '</i>' : '';
+    // A name-only word (Dell, Paris) gets a dim label and a "name" tag so the
+    // Chinese is not mistaken for a definition.
+    let zh = '';
+    if (f.zh){
+      zh = '<i class="zh' + (f.nameOnly ? ' name' : '') + '">' + f.zh +
+           (f.nameOnly ? ' <em>(name)</em>' : '') + '</i>';
+    }
     return '<div><b>' + f.word + '</b>' + zh +
            '<span class="pts">+' + f.pts + '</span></div>';
   }).join('');
