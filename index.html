@@ -382,14 +382,25 @@ function spawn(){
   if (collide(formOf(cur), cur.x, cur.y)){ gameOver(false); return; }
 }
 
+/* Port of the Python reachroof():
+     for c in self.saved_board[0]:
+         if c != 0: return True
+     return False
+   i.e. the game is over as soon as ANY cell on the top row is occupied. */
+function reachRoof(){
+  for (let x = 0; x < COLS; x++){
+    if (saved[0][x] !== 0) return true;
+  }
+  return false;
+}
+
 function lockPiece(){
   const form = formOf(cur);
   let minY = ROWS, maxY = -1;
 
-  // Reach-top check comes FIRST: if any part of this piece is at or above the
-  // top row, or lands on an occupied cell, the game ends immediately. We must
-  // not write the piece to the board first, because doing so can fill rows and
-  // clear them, which would hide the fact that the stack reached the top.
+  // Out-of-bounds or landing on an occupied cell ends the game before the
+  // piece is written, otherwise it could fill and clear rows and hide the
+  // fact that the stack had topped out.
   for (let y = 0; y < form.length; y++)
     for (let x = 0; x < form[y].length; x++){
       const id = form[y][x];
@@ -397,10 +408,9 @@ function lockPiece(){
       const by = cur.y + y, bx = cur.x + x;
       if (by < 0 || by >= ROWS || bx < 0 || bx >= COLS){ gameOver(false); return; }
       if (saved[by][bx] !== 0){ gameOver(false); return; }
-      if (by <= 0){ gameOver(false); return; }      // touched the ceiling
     }
 
-  // Safe to commit the piece now.
+  // Commit the piece.
   for (let y = 0; y < form.length; y++)
     for (let x = 0; x < form[y].length; x++){
       const id = form[y][x];
@@ -414,6 +424,8 @@ function lockPiece(){
   cur = null;
   judge(minY, maxY).then(function(){
     if (garbageLeft <= 0){ gameOver(true); return; }
+    // Any block reaching the top row means the stack topped out.
+    if (reachRoof()){ gameOver(false); return; }
     spawn();
   });
 }
@@ -507,6 +519,7 @@ function judge(minY, maxY){
         if (allBrick){
           garbageLeft = Math.max(0, garbageLeft - 1);
           saved.splice(below, 1);
+          // Re-pad so the grid stays ROWS tall.
           saved.unshift(new Array(COLS).fill(0));
         }
       }
