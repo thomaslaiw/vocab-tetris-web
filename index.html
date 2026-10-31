@@ -546,23 +546,6 @@ function lockPiece(){
   });
 }
 
-/* Endless mode: keep the brick floor topped up to GARBAGE_ROWS. Rows are added
-   at the bottom, so the board shifts up exactly as much as was eaten. */
-function topUpBricks(){
-  let guard = 0;
-  while (garbageLeft < GARBAGE_ROWS && guard++ < GARBAGE_ROWS + 2){
-    const top = saved.shift();
-    saved.push(new Array(COLS).fill(-1));
-    garbageLeft++;
-    // if the shifted-off row had anything in it we are dangerously high, but
-    // reachRoof() after the resolve handles that case
-    if (top && top.some(function(v){ return v !== 0; })){ garbageLeft = GARBAGE_ROWS; break; }
-  }
-  garbageLeft = Math.max(garbageLeft, GARBAGE_ROWS);
-  bricksCleared = Math.max(0, bricksCleared);
-  paintBricks();
-}
-
 /* Push one brick row in at the bottom; the whole board shifts up by one row.
    Returns false if the shift would push an occupied cell off the top. */
 function riseGarbage(){
@@ -699,12 +682,6 @@ function scanSet(y, slice){
 }
 function scanClear(){ Scan.active = false; Scan.row = -1; Scan.len = 0; Scan.text = ''; render(); }
 
-/* How many rows a found word eats, counting the word's own row.
-   2-3 letters -> 3 rows,  4+ letters -> 4 rows. */
-function rowsEatenFor(len){
-  return (len <= 3) ? 3 : 4;
-}
-
 function judge(minY, maxY){
   resolving = true;
   const from = 0;
@@ -782,35 +759,47 @@ function applyHits(hits, scored){
   // lowest row first
   const rows = Object.keys(byRow).map(Number).sort(function(a, b){ return b - a; });
 
+  // Delete from the bottom up. Rows are removed with splice+unshift, which keeps
+  // the array length but shifts everything ABOVE the cut down - so any row index
+  // we still have to process must be lower than the one just handled.
   rows.forEach(function(y){
     const words = byRow[y];
     if (y >= ROWS) return;
     const rowNow = saved[y];
     if (!rowNow) return;
 
-    // the largest word on this row decides how many rows go
-    let longest = words[0];
-    words.forEach(function(w){ if (w.len > longest.len) longest = w; });
-
-    const want = rowsEatenFor(longest.len);
-    for (let i = 0; i < want; i++){
-      const idx = y + i;
-      if (idx >= ROWS) break;
-      const row = saved[idx];
-      // grey rows are consumed like any other row
-      let allBrick = row.length > 0;
-      for (let x = 0; x < COLS; x++){ if (row[x] !== -1) allBrick = false; }
-      if (allBrick){
-        garbageLeft = Math.max(0, garbageLeft - 1);
-        bricksCleared++;
+    // If the word is no longer on this row, an earlier (lower) delete moved the
+    // board. Find it again before removing anything.
+    const stillHere = rowNow.join('').indexOf(words[0].text) !== -1;
+    if (!stillHere){
+      let found = -1;
+      for (let yy = 0; yy < ROWS; yy++){
+        if (saved[yy].join('').indexOf(words[0].text) !== -1){ found = yy; break; }
       }
-      saved.splice(idx, 1);
-      saved.unshift(new Array(COLS).fill(0));
+      if (found === -1) return;          // already gone
+      y = found;
     }
 
-    // Endless mode: the brick floor is a permanent obstacle, so top it back up
-    // whenever a clear has eaten into it.
-    topUpBricks();
+    // Remove the word's own row. Nothing else goes with it unless the row
+    // directly beneath is a grey brick row, in which case that one brick layer
+    // is consumed too - that is how the brick floor is worn down.
+    const below = y + 1;
+    const belowIsBrick = below < ROWS && saved[below].every(function(v){ return v === -1; });
+
+    saved.splice(y, 1);
+    saved.unshift(new Array(COLS).fill(0));
+
+    if (belowIsBrick){
+      // splice + unshift keeps the array length, so the brick row that was
+      // below is still at y + 1 - it did not move.
+      const idx = below;
+      if (idx < ROWS && saved[idx].every(function(v){ return v === -1; })){
+        garbageLeft = Math.max(0, garbageLeft - 1);
+        bricksCleared++;
+        saved.splice(idx, 1);
+        saved.unshift(new Array(COLS).fill(0));
+      }
+    }
 
     // score every distinct word on the row
     words.forEach(function(h){
