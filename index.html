@@ -741,8 +741,11 @@ function drawBrick(g, x, y, size){
   g.strokeRect(px + 1.5, py + 1.5, size - 3, size - 3);
 }
 
+
+/* ---------------------------------------------------------------- render */
 function render(){
-  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.save();
+  ctx.clearRect(-8, -8, cv.width + 16, cv.height + 16);
 
   ctx.strokeStyle = 'rgba(255,255,255,.05)';
   ctx.lineWidth = 1;
@@ -774,22 +777,24 @@ function render(){
       else drawCell(ctx, x, y, CELL, v, false);
     }
 
-  if (!cur || over) return;
-
-  // ghost
-  const form = formOf(cur);
-  let gy = cur.y, guard = 0;
-  while (!collide(form, cur.x, gy + 1) && guard++ < ROWS + 4) gy++;
-  if (gy > cur.y){
-    for (let y = 0; y < form.length; y++)
-      for (let x = 0; x < form[y].length; x++){
-        const id = form[y][x];
-        if (!id) continue;
-        const by = gy + y, bx = cur.x + x;
-        if (by >= 0 && by < ROWS && bx >= 0 && bx < COLS && saved[by][bx] === 0)
-          drawCell(ctx, bx, by, CELL, cur.characters[id], true);
-      }
+  if (cur && !over){
+    // ghost
+    const form = formOf(cur);
+    let gy = cur.y, guard = 0;
+    while (!collide(form, cur.x, gy + 1) && guard++ < ROWS + 4) gy++;
+    if (gy > cur.y){
+      for (let y = 0; y < form.length; y++)
+        for (let x = 0; x < form[y].length; x++){
+          const id = form[y][x];
+          if (!id) continue;
+          const by = gy + y, bx = cur.x + x;
+          if (by >= 0 && by < ROWS && bx >= 0 && bx < COLS && saved[by][bx] === 0)
+            drawCell(ctx, bx, by, CELL, cur.characters[id], true);
+        }
+    }
   }
+
+  ctx.restore();
 }
 
 function drawNext(){
