@@ -386,6 +386,10 @@ function lockPiece(){
   const form = formOf(cur);
   let minY = ROWS, maxY = -1;
 
+  // Reach-top check comes FIRST: if any part of this piece is at or above the
+  // top row, or lands on an occupied cell, the game ends immediately. We must
+  // not write the piece to the board first, because doing so can fill rows and
+  // clear them, which would hide the fact that the stack reached the top.
   for (let y = 0; y < form.length; y++)
     for (let x = 0; x < form[y].length; x++){
       const id = form[y][x];
@@ -393,6 +397,15 @@ function lockPiece(){
       const by = cur.y + y, bx = cur.x + x;
       if (by < 0 || by >= ROWS || bx < 0 || bx >= COLS){ gameOver(false); return; }
       if (saved[by][bx] !== 0){ gameOver(false); return; }
+      if (by <= 0){ gameOver(false); return; }      // touched the ceiling
+    }
+
+  // Safe to commit the piece now.
+  for (let y = 0; y < form.length; y++)
+    for (let x = 0; x < form[y].length; x++){
+      const id = form[y][x];
+      if (!id) continue;
+      const by = cur.y + y, bx = cur.x + x;
       saved[by][bx] = cur.characters[id];
       if (by < minY) minY = by;
       if (by > maxY) maxY = by;
@@ -440,7 +453,9 @@ function rowSlices(line){
   for (let len = COLS; len >= MIN_WORD; len--){
     for (let x = 0; x + len <= COLS; x++){
       const seg = line.slice(x, x + len);
-      if (seg.indexOf(0) !== -1) continue;     // gaps break the word
+      // 0 = empty, -1 = grey brick. Bricks are the win condition, never a word.
+      if (seg.indexOf(0) !== -1) continue;
+      if (seg.indexOf(-1) !== -1) continue;
       out.push({ text: seg.join(''), x: x, len: len });
     }
   }
@@ -451,12 +466,19 @@ function judge(minY, maxY){
   resolving = true;
   const from = Math.max(0, minY - 1);
   const to = Math.min(ROWS - 1, maxY + 1);
+  const used = {};                 // row slots already scored this pass
   return pass(from, to).then(function(){ resolving = false; });
+
+  function rowKey(y){ return saved[y].join(','); }
 
   function pass(a, b){
     if (a > to) return Promise.resolve();
 
     for (let y = a; y <= b; y++){
+      // A slot is "done" only while its contents are unchanged. Once rows
+      // shift, the slot holds different data and is fair game again.
+      const k = y + ':' + rowKey(y);
+      if (used[k]) continue;
       const slices = rowSlices(saved[y]);
       if (slices.length) return trySlice(y, slices, 0);
     }
@@ -470,14 +492,24 @@ function judge(minY, maxY){
     return isVocab(s.text).then(function(hit){
       if (!hit) return trySlice(y, slices, k + 1);
 
-      // found a word in this row -> remove the whole row
-      const row = saved[y];
-      let allBrick = true;
-      for (let x = 0; x < COLS; x++){ if (row[x] !== -1) allBrick = false; }
-      if (allBrick) garbageLeft = Math.max(0, garbageLeft - 1);
-
+      // Clear the word row FIRST, then check whether a brick row has slid into
+      // the slot directly beneath it. Doing the brick removal first used to
+      // shift the whole board down and let the same letters be scored twice.
       saved.splice(y, 1);
       saved.unshift(new Array(COLS).fill(0));
+
+      // A brick row that is now directly under the cleared slot gets consumed,
+      // which is how the player saws through the 3 brick layers and wins.
+      const below = y + 1;
+      if (below < ROWS){
+        let allBrick = true;
+        for (let x = 0; x < COLS; x++){ if (saved[below][x] !== -1) allBrick = false; }
+        if (allBrick){
+          garbageLeft = Math.max(0, garbageLeft - 1);
+          saved.splice(below, 1);
+          saved.unshift(new Array(COLS).fill(0));
+        }
+      }
 
       score += s.len * 100;
       found.unshift({ word: s.text.toUpperCase(), pts: s.len * 100 });
@@ -487,7 +519,11 @@ function judge(minY, maxY){
       showToast(s.text.toUpperCase());
       paintBricks();
 
-      return pass(from, to);          // rows shifted, rescan the window
+      // Slot y was cleared. Rows above it shifted down, so anything that lands
+      // in y is a NEW row and may legitimately score. Rescan the whole window;
+      // the `used` map prevents the same slot+contents from scoring twice.
+      used[y + ':' + saved[y].join(',')] = 1;
+      return pass(from, to);
     });
   }
 }
@@ -638,12 +674,25 @@ function rotate(){
   if (!live()) return;
   const nextR = (cur.r + 1) % cur.shape.forms.length;
   const form = cur.shape.forms[nextR];
-  const kicks = [0, -1, 1, -2, 2];
-  for (let k = 0; k < kicks.length; k++){
-    if (!collide(form, cur.x + kicks[k], cur.y)){
-      cur.r = nextR; cur.x += kicks[k]; render(); return;
+
+  // Kick offsets. A wide rotation near a wall can need up to 3 columns of
+  // correction (the Line is 4 wide but only 1 wide before rotating), so the
+  // table has to reach that far or the rotation is silently refused.
+  const kicks = [0, -1, 1, -2, 2, -3, 3, -4, 4];
+  for (let order = 0; order < kicks.length; order++){
+    const k = kicks[order];
+    // also try nudging up one row, which helps near a tall stack
+    for (let dy = 0; dy >= -1; dy--){
+      if (!collide(form, cur.x + k, cur.y + dy)){
+        cur.r = nextR;
+        cur.x += k;
+        cur.y += dy;
+        render();
+        return;
+      }
     }
   }
+  // no legal rotation here: leave the piece exactly as it was
 }
 
 function softDrop(){
