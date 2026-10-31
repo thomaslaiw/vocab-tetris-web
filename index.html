@@ -223,7 +223,7 @@ const SHAPE_NAMES = Object.keys(SHAPES);
 const PHONICSETS = DATA.phonicsets;
 
 const COLS = 10, ROWS = 20;
-const MIN_WORD = 2;              // shortest word that can clear a row
+const MIN_WORD = 4;              // shortest word that can clear a row
 const GARBAGE_ROWS = 3;          // rows of bricks the player must clear to win
 const GARBAGE_RISE_AFTER = 10;   // pieces without a clear before a new brick row rises
 
@@ -1213,7 +1213,7 @@ function resetGame(){
   over = false; won = false; paused = false;
   resolving = false;
   cur = null;
-  message = 'Form 2+ letter words!';
+  message = 'Form 4+ letter words!';
   lastPhonicHeads = [];              // fresh anti-repeat window each game
   nextPiece = makePiece();
   paintBricks();
