@@ -41,6 +41,20 @@ recent does it fall back to the least-recently-used one.
 
 Touch buttons appear on small screens.
 
+## Visual effects
+
+When a word clears:
+
+- **Flying letters** — every letter on the row lifts off, spins, drifts outward
+  and fades, drawn hot white with a dark outline and a cyan halo so it stays
+  readable over the flash
+- **Row flash** — a teal gradient band sweeps the cleared row
+- **Particles** — sparks burst from each cell, cyan for letters, blue for bricks
+- **Score float** — `+400` rises from the cleared row
+- **Screen shake** — scales with how many letters were on the row
+
+Hard drops leave a fading trail of the piece's path.
+
 ## Sound
 
 Sound effects are synthesised live with the **Web Audio API** — no audio files,
