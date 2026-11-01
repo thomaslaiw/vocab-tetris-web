@@ -24,6 +24,7 @@
   .box{background:#1e1e2c;border-radius:6px;padding:10px 12px}
 
   #nextCv{display:block;margin:2px auto 0}
+  #holdCv{display:block;margin:2px auto 0}
 
   #goal{background:#1e1e2c;border-radius:6px;padding:10px 12px}
   #goalRow{display:flex;gap:6px;margin-top:2px}
@@ -105,6 +106,7 @@
   #wasd button:active{background:rgba(78,205,196,.55);transform:scale(.94)}
   #wasd .fkey{grid-column:1;grid-row:1}
   #wasd .wkey{grid-column:2;grid-row:1}
+  #wasd .hkey{grid-column:3;grid-row:1}
   #wasd .akey{grid-column:1;grid-row:2}
   #wasd .skey{grid-column:2;grid-row:2}
   #wasd .dkey{grid-column:3;grid-row:2}
@@ -141,6 +143,7 @@
     <div id="wasd">
       <button class="fkey" data-key="f" aria-label="flip">⇅</button>
       <button class="wkey" data-key="w" aria-label="rotate">W</button>
+      <button class="hkey" data-key="c" aria-label="hold">H</button>
       <button class="akey" data-key="a" aria-label="left">A</button>
       <button class="skey" data-key="s" aria-label="down">S</button>
       <button class="dkey" data-key="d" aria-label="right">D</button>
@@ -156,7 +159,7 @@
         <b>Goal</b><br>
         Score as high as you can. The grey rows keep rebuilding, so there is
         no finish line - just your best run.<br><br>
-        <span id="kbHint"><kbd>←</kbd><kbd>→</kbd> move <kbd>↓</kbd> drop <kbd>↑</kbd> rotate <kbd>F</kbd> flip <kbd>Space</kbd> slam <kbd>P</kbd> pause</span>
+        <span id="kbHint"><kbd>←</kbd><kbd>→</kbd> move <kbd>↓</kbd> drop <kbd>↑</kbd> rotate <kbd>F</kbd> flip <kbd>C</kbd> hold <kbd>Space</kbd> slam <kbd>P</kbd> pause</span>
       </div>
       <button id="ovBtn">Start</button>
     </div>
@@ -172,6 +175,11 @@
     <div class="box" style="text-align:center">
       <div class="label" style="text-align:left">Next</div>
       <canvas id="nextCv" width="112" height="70"></canvas>
+    </div>
+
+    <div class="box" style="text-align:center">
+      <div class="label" style="text-align:left">Hold</div>
+      <canvas id="holdCv" width="112" height="70"></canvas>
     </div>
 
     <div id="goal">
@@ -203,6 +211,7 @@
     </div>
 
     <div id="touch">
+      <button data-act="hold">↻H</button>
       <button data-act="left">←</button>
       <button data-act="rotate">↻</button>
       <button data-act="flip">⇅</button>
@@ -258,8 +267,13 @@ cv.height = ROWS * CELL;
 const nextCv = document.getElementById('nextCv');
 const nctx = nextCv.getContext('2d');
 
+const holdCv = document.getElementById('holdCv');
+const hctx = holdCv.getContext('2d');
+
 /* ------------------------------------------------------------------ state */
 let saved, board, cur, nextPiece, score, found, running, paused, over, won;
+let heldPiece = null;            // piece parked in the Hold slot (or null)
+let holdUsed = false;            // one hold per piece; reset when a piece locks
 let dropTimer, dropInterval, garbageLeft;
 let bricksCleared = 0;           // brick rows removed this game
 const FLIP_AMMO_START = 2;
@@ -598,7 +612,9 @@ function collide(form, px, py){
 function spawn(){
   cur = nextPiece || makePiece();
   nextPiece = makePiece();
+  holdUsed = false;          // a fresh piece may be held once again
   drawNext();
+  drawHold();
   render();
   if (collide(formOf(cur), cur.x, cur.y)){ gameOver(false); return; }
 }
@@ -1062,6 +1078,7 @@ const Sound = (function(){
     brick(){ tone(392, 0, 0.10, 'triangle', 0.14); tone(261.63, 0.07, 0.14, 'triangle', 0.14); },
     garbage(){ tone(98, 0, 0.16, 'sawtooth', 0.10); tone(82.4, 0.10, 0.22, 'sawtooth', 0.10); },
     flip(){ tone(523.25, 0, 0.07, 'square', 0.10); tone(392, 0.06, 0.09, 'square', 0.10); },
+    hold(){ tone(440, 0, 0.06, 'triangle', 0.10); tone(587.33, 0.05, 0.08, 'triangle', 0.10); },
     denied(){ tone(155.56, 0, 0.09, 'square', 0.09); },
     win(){
       [523.25, 659.25, 783.99, 1046.50].forEach(function(f, i){
@@ -1443,6 +1460,41 @@ function drawNext(){
     }
 }
 
+function drawHold(){
+  const s = 17;
+  hctx.clearRect(0, 0, holdCv.width, holdCv.height);
+  if (!heldPiece){ drawHoldEmpty(); return; }
+  const form = formAt(heldPiece.shape, 0);
+  const h = form.length, w = form[0].length;
+  const ox = (holdCv.width - w * s) / 2, oy = (holdCv.height - h * s) / 2;
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++){
+      const id = form[y][x];
+      if (!id) continue;
+      hctx.save();
+      hctx.translate(ox, oy);
+      drawCell(hctx, x, y, s, heldPiece.characters[id], false);
+      hctx.restore();
+    }
+  // dim it once used this turn, so the player sees "already held"
+  if (holdUsed){
+    hctx.save();
+    hctx.fillStyle = 'rgba(20,20,30,0.5)';
+    hctx.fillRect(0, 0, holdCv.width, holdCv.height);
+    hctx.restore();
+  }
+}
+
+function drawHoldEmpty(){
+  hctx.save();
+  hctx.fillStyle = 'rgba(255,255,255,0.08)';
+  hctx.font = '700 15px sans-serif';
+  hctx.textAlign = 'center';
+  hctx.textBaseline = 'middle';
+  hctx.fillText('empty', holdCv.width / 2, holdCv.height / 2);
+  hctx.restore();
+}
+
 function paintBricks(){
   for (let i = 0; i < 3; i++){
     const el = document.getElementById('b' + i);
@@ -1554,6 +1606,38 @@ function flipVertical(){
   }
 }
 
+/* Hold: park the current piece and pull the next one (or swap back the piece
+   already held). Classic Tetris semantics: one hold per piece, the held piece
+   resets to the top of the board, and a fresh piece spawns in its place. */
+function hold(){
+  if (!live()) return;
+  if (holdUsed){ Sound.denied(); render(); return; }
+
+  // The parked piece always resets to its spawn orientation and position.
+  const incoming = heldPiece;
+  heldPiece = pieceFrom(cur.name, cur.characters);
+  heldPiece.phonics = cur.phonics;
+
+  if (incoming){
+    // swap: the held piece comes back out, reset to spawn
+    const back = pieceFrom(incoming.name, incoming.characters);
+    back.phonics = incoming.phonics;
+    cur = back;
+  } else {
+    // nothing held yet: draw the next piece instead
+    cur = nextPiece || makePiece();
+    nextPiece = makePiece();
+  }
+
+  holdUsed = true;
+  Sound.hold();
+  drawNext();
+  drawHold();
+  render();
+
+  if (collide(formOf(cur), cur.x, cur.y)){ gameOver(false); return; }
+}
+
 function softDrop(){
   if (!live()) return;
   if (!collide(formOf(cur), cur.x, cur.y + 1)){ cur.y++; render(); }
@@ -1601,6 +1685,8 @@ function resetGame(){
   over = false; won = false; paused = false;
   resolving = false;
   cur = null;
+  heldPiece = null;
+  holdUsed = false;
   message = 'Form 4+ letter words!';
   lastPhonicHeads = [];              // fresh anti-repeat window each game
   nextPiece = makePiece();
@@ -1679,6 +1765,7 @@ document.addEventListener('keydown', function(e){
   else if (k === 'ArrowDown' || k === 's'){ softDrop(); e.preventDefault(); }
   else if (k === 'ArrowUp' || k === 'w'){ rotate(); e.preventDefault(); }
   else if (k === 'f' || k === 'F'){ flipVertical(); e.preventDefault(); }
+  else if (k === 'c' || k === 'C'){ hold(); e.preventDefault(); }
   else if (k === ' '){ hardDrop(); e.preventDefault(); }
 });
 
@@ -1703,6 +1790,7 @@ function doAction(act){
   else if (act === 'right') move(1);
   else if (act === 'rotate') rotate();
   else if (act === 'flip') flipVertical();
+  else if (act === 'hold') hold();
   else if (act === 'down') softDrop();
   else if (act === 'drop') hardDrop();
 }
@@ -1757,6 +1845,7 @@ document.querySelectorAll('#wasd button').forEach(function(b){
   function actNow(){
     if (k === 'w') rotate();
     else if (k === 'f') flipVertical();
+    else if (k === 'c') hold();
     else if (k === 'a') move(-1);
     else if (k === 'd') move(1);
     else if (k === 's') softDrop();
