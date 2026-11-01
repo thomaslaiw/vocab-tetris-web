@@ -560,7 +560,7 @@ function squareHasDeadSide(shape, characters){
 function makePiece(typeName){
   // When no shape is asked for, squares are drawn from the weighted list so the
   // consonant/vowel split stays controlled; everything else is uniform.
-  const first = typeName || (Math.random() < 0.28
+  const first = typeName || (Math.random() < 0.15
       ? pickWeighted(SQUARE_VARIANTS)
       : SHAPE_NAMES[Math.floor(Math.random() * SHAPE_NAMES.length)]);
 
