@@ -103,6 +103,7 @@
     transition:background .1s,transform .06s;
   }
   #wasd button:active{background:rgba(78,205,196,.55);transform:scale(.94)}
+  #wasd .fkey{grid-column:1;grid-row:1}
   #wasd .wkey{grid-column:2;grid-row:1}
   #wasd .akey{grid-column:1;grid-row:2}
   #wasd .skey{grid-column:2;grid-row:2}
@@ -138,6 +139,7 @@
 
     <!-- WASD pad, overlaid on the board -->
     <div id="wasd">
+      <button class="fkey" data-key="f" aria-label="flip">⇅</button>
       <button class="wkey" data-key="w" aria-label="rotate">W</button>
       <button class="akey" data-key="a" aria-label="left">A</button>
       <button class="skey" data-key="s" aria-label="down">S</button>
@@ -154,7 +156,7 @@
         <b>Goal</b><br>
         Score as high as you can. The grey rows keep rebuilding, so there is
         no finish line - just your best run.<br><br>
-        <span id="kbHint"><kbd>←</kbd><kbd>→</kbd> move <kbd>↓</kbd> drop <kbd>↑</kbd> rotate <kbd>Space</kbd> slam <kbd>P</kbd> pause</span>
+        <span id="kbHint"><kbd>←</kbd><kbd>→</kbd> move <kbd>↓</kbd> drop <kbd>↑</kbd> rotate <kbd>F</kbd> flip <kbd>Space</kbd> slam <kbd>P</kbd> pause</span>
       </div>
       <button id="ovBtn">Start</button>
     </div>
@@ -198,6 +200,7 @@
     <div id="touch">
       <button data-act="left">←</button>
       <button data-act="rotate">↻</button>
+      <button data-act="flip">⇅</button>
       <button data-act="right">→</button>
       <button data-act="down">↓</button>
       <button data-act="drop">⤓</button>
@@ -418,16 +421,35 @@ function rot90cw(form){
   return out;
 }
 
+/* mirror top-to-bottom: rows are reordered, each row keeps its order */
+function flipV(form){
+  const f = padForm(form);
+  return f.slice().reverse().map(function(row){ return row.slice(); });
+}
+
+/* mirror left-to-right: every row is reversed */
+function flipH(form){
+  const f = padForm(form);
+  return f.map(function(row){ return row.slice().reverse(); });
+}
+
 /* orientation r, derived from the resting form on every call */
 function formAt(shape, r){
   let form = padForm(shape.forms[0]);
   const turns = ((r % 4) + 4) % 4;
   for (let i = 0; i < turns; i++) form = rot90cw(form);
+  // a flip state (4-7) mirrors the result of the matching rotation
+  if (r >= 4) form = flipV(form);
   return form;
 }
 
-/* how many distinct orientations a shape has - always 4 with computed rotation */
-function rotCount(shape){ return 4; }
+/* how many orientations exist: 4 rotations x 2 mirror states.
+   NOTE: the rotate key only walks r0..r3 - the mirror state is toggled by the
+   flip key. rotCount() is the size of the whole orientation space. */
+function rotCount(shape){ return 8; }
+
+/* the four rotation states the rotate key cycles through */
+function rotCycle(shape){ return 4; }
 
 function pieceFrom(shapeName, characters){
   const shape = SHAPES[shapeName];
@@ -1445,14 +1467,12 @@ function move(dx){
   if (!collide(form, cur.x + dx, cur.y)){ cur.x += dx; Sound.move(); render(); }
 }
 
-function rotate(){
-  if (!live()) return;
-  const nextR = (cur.r + 1) % rotCount(cur.shape);
+/* Try to place the piece in orientation nextR, nudging it around obstacles.
+   A wide rotation near a wall can need up to 4 columns of correction (the Line
+   is 4 wide but only 1 wide before rotating), so the kick table has to reach
+   that far or the turn is silently refused. */
+function tryOrient(nextR){
   const form = formAt(cur.shape, nextR);
-
-  // Kick offsets. A wide rotation near a wall can need up to 3 columns of
-  // correction (the Line is 4 wide but only 1 wide before rotating), so the
-  // table has to reach that far or the rotation is silently refused.
   const kicks = [0, -1, 1, -2, 2, -3, 3, -4, 4];
   for (let order = 0; order < kicks.length; order++){
     const k = kicks[order];
@@ -1462,13 +1482,42 @@ function rotate(){
         cur.r = nextR;
         cur.x += k;
         cur.y += dy;
-        Sound.rotate();
-        render();
-        return;
+        return true;
       }
     }
   }
-  // no legal rotation here: leave the piece exactly as it was
+  return false;      // no legal placement: leave the piece exactly as it was
+}
+
+function rotate(){
+  if (!live()) return;
+  // Rotating preserves the mirror state: r0..r3 stay unmirrored, r4..r7 stay
+  // mirrored. Only the flip key crosses between the two halves.
+  const base = cur.r >= 4 ? 4 : 0;
+  const step = cur.r % 4;
+  const nextR = base + ((step + 1) % 4);
+  if (tryOrient(nextR)){
+    Sound.rotate();
+    render();
+  }
+}
+
+/* Vertical flip: mirror the piece top-to-bottom. In this engine that is the
+   rotation plus a vertical mirror, stored as orientation r + 4 (r 0-3 rotate,
+   4-7 the same rotations flipped). The letter ids travel with their cells, so
+   the word the piece carries is unchanged - only its arrangement is. */
+function flipVertical(){
+  if (!live()) return;
+  const n = rotCount(cur.shape);          // 8 = 4 rotations x 2 mirrors
+  const half = n / 2;
+  // toggling the mirror bit keeps the current rotation
+  const rotated = cur.r % half;
+  const mirrored = cur.r >= half;
+  const nextR = mirrored ? rotated : rotated + half;
+  if (tryOrient(nextR)){
+    Sound.rotate();
+    render();
+  }
 }
 
 function softDrop(){
@@ -1594,6 +1643,7 @@ document.addEventListener('keydown', function(e){
   else if (k === 'ArrowRight' || k === 'd'){ move(1); e.preventDefault(); }
   else if (k === 'ArrowDown' || k === 's'){ softDrop(); e.preventDefault(); }
   else if (k === 'ArrowUp' || k === 'w'){ rotate(); e.preventDefault(); }
+  else if (k === 'f' || k === 'F'){ flipVertical(); e.preventDefault(); }
   else if (k === ' '){ hardDrop(); e.preventDefault(); }
 });
 
@@ -1617,6 +1667,7 @@ function doAction(act){
   if (act === 'left') move(-1);
   else if (act === 'right') move(1);
   else if (act === 'rotate') rotate();
+  else if (act === 'flip') flipVertical();
   else if (act === 'down') softDrop();
   else if (act === 'drop') hardDrop();
 }
@@ -1670,6 +1721,7 @@ document.querySelectorAll('#wasd button').forEach(function(b){
 
   function actNow(){
     if (k === 'w') rotate();
+    else if (k === 'f') flipVertical();
     else if (k === 'a') move(-1);
     else if (k === 'd') move(1);
     else if (k === 's') softDrop();
@@ -1679,7 +1731,7 @@ document.querySelectorAll('#wasd button').forEach(function(b){
     ev.preventDefault();
     ev.stopPropagation();
     actNow();
-    if (k === 'a' || k === 'd' || k === 's'){
+    if (k === 'a' || k === 'd' || k === 's'){   // repeat; W and F act once per press
       clearInterval(timer);
       timer = setInterval(actNow, 90);
     }
