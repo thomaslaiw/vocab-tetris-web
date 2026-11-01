@@ -826,7 +826,8 @@ function judge(minY, maxY){
 
       // Show every retained word one at a time, then apply them all.
       return presentQueue(best).then(function(){
-        applyHits(best, scored);
+        return applyHits(best, scored);
+      }).then(function(){
         return round();
       });
     });
@@ -888,8 +889,12 @@ function keepLongestPerRow(hits){
 }
 
 /* Flash each word in turn - one card at a time - so a multi-word resolve reads
-   as a sequence rather than a single blur. Each card also resolves its Chinese
-   label before moving on. */
+   as a sequence rather than a single blur.
+
+   Each card MUST speak and translate while it is on screen. Doing it later (in
+   applyHits) was the bug: by then the queue had already moved on, so the player
+   saw the word for a moment and heard/read nothing, or heard every word at once
+   after the last one had already gone. */
 function presentQueue(words){
   if (!words.length) return Promise.resolve();
 
@@ -899,16 +904,17 @@ function presentQueue(words){
       scanSet(w.y, { x: w.x, len: w.len, text: w.text });
       showToast(w.text.toUpperCase(), '');
       Sound.word(w.len);
+      Speech.say(w.text);                              // pronounce it now
 
-      // give the translation a moment to arrive, but never block longer than
-      // roughly one display step
+      // Show the Chinese as soon as it arrives, but never hold the queue up for
+      // longer than one display step if the network is slow or offline.
       return Promise.race([
         translateDetail(w.text).then(function(d){
           if (d && d.zh && !d.dim) showToast(w.text.toUpperCase(), d.zh);
         }).catch(function(){}),
-        new Promise(function(done){ setTimeout(done, 380); })
+        new Promise(function(done){ setTimeout(done, 600); })
       ]).then(function(){
-        return new Promise(function(done){ setTimeout(done, 120); });
+        return new Promise(function(done){ setTimeout(done, 260); });
       });
     });
   });
@@ -920,7 +926,8 @@ function presentQueue(words){
    with from the lowest upward, and whatever sits below a cleared row goes with
    it - brick or not. */
 function applyHits(hits, scored){
-  if (!hits.length) return;
+  const pending = [];
+  if (!hits.length) return Promise.resolve();
 
   // group by row
   const byRow = {};
@@ -973,8 +980,9 @@ function applyHits(hits, scored){
       }
     }
 
-    // Score the single retained word for this row. The queue already flashed it
-    // on screen, so only the account book and the translation happen here.
+    // Score the single retained word for this row. presentQueue already spoke
+    // the word and showed its Chinese while the card was on screen, so this only
+    // records the result - it must not speak again or the word is read twice.
     words.forEach(function(h){
       if (scored[h.text]) return;          // already paid for this word
       scored[h.text] = 1;
@@ -985,24 +993,25 @@ function applyHits(hits, scored){
       if (found.length > 5) found.pop();
 
       message = 'Found "' + h.text.toUpperCase() + '"  +' + (h.len * 100);
-      Speech.say(h.text);
 
-      // The Chinese label is only shown when the word has a real English
-      // meaning. A name (Dell the company) would be misleading, so it is
-      // marked and rendered dim instead of pretending to be a definition.
-      translateDetail(h.text).then(function(d){
-        if (!d || !d.zh) return;
-        entry.zh = d.zh;
-        entry.nameOnly = !!d.dim;
-        entry.pos = d.pos || [];
-        refreshHUD();
-      });
+      // Fill in the label from cache: the queue has normally resolved it already.
+      pending.push(
+        translateDetail(h.text).then(function(d){
+          if (!d || !d.zh) return;
+          entry.zh = d.zh;
+          entry.nameOnly = !!d.dim;
+          entry.pos = d.pos || [];
+        }).catch(function(){})
+      );
     });
   });
 
   refreshHUD();
   paintBricks();
   Sound.brick();
+
+  // Resolve once every label has landed, so callers can rely on found[].zh.
+  return Promise.all(pending);
 }
 
 /* ============================================================ SOUND
