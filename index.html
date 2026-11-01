@@ -1242,36 +1242,47 @@ function partsOfSpeech(word){
     .catch(function(){ clearTimeout(timer); return null; });   // null = unknown
 }
 
+/* Strip Google's echoed article / measure words, and stray "the ". */
+function cleanZh(zh){
+  let label = zh || '';
+  label = label.replace(/^(這|那|一個|一隻|一位)\s*/u, '').trim();
+  label = label.replace(/^the\s+/i, '').trim();
+  return label;
+}
+
 /* Returns { zh, pos, dim } where dim means "the label is a name, not a meaning". */
 function translateDetail(word){
   const key = word.toLowerCase();
   if (transDetail[key] !== undefined) return Promise.resolve(transDetail[key]);
 
-  return partsOfSpeech(key).then(function(pos){
-    // A name has no parts of speech at all - do not dress a brand up as a word.
-    if (pos && pos.length === 0){
-      const out = { zh: '', pos: [], dim: true };
-      transDetail[key] = out;
-      transCache[key] = '';
-      return out;
-    }
-
-    // Ask for the sense, not just the string: nouns get "the", verbs get the
-    // past tense, so Google stops answering with the brand name.
-    const probe = translationProbe(key, pos || []);
-    return gtranslate(probe).then(function(zh){
-      let label = zh || '';
-      // strip the article Google echoes back for "the X" probes
-      label = label.replace(/^(這|那|一個|一隻|一位)\s*/u, '').trim();
-      // "the dell" sometimes comes back as "the 山谷" - drop a stray article
-      label = label.replace(/^the\s+/i, '').trim();
-
-      const out = { zh: label, pos: pos || [], dim: false, probe: probe };
-      transDetail[key] = out;
-      transCache[key] = out.zh;
-      return out;
-    });
+  // FAST PATH: translate the bare word straight away with Google. A single
+  // network hop, no Wiktionary gate, so it still lands on slow mobile Safari
+  // where the two-hop (parts-of-speech first, then Google) times out.
+  const fast = gtranslate(key).then(function(zh){
+    const out = { zh: cleanZh(zh), pos: [], dim: false, probe: key };
+    transDetail[key] = out;
+    transCache[key] = out.zh;
+    return out;
   });
+
+  // REFINEMENT (never blocks): ask Wiktionary for the parts of speech and, when
+  // it disambiguates the sense (verb vs noun), re-translate with a probe so the
+  // NEXT time the word appears its label is sharper. "crane" alone is 起重機,
+  // "craned" is 伸長.
+  partsOfSpeech(key).then(function(pos){
+    if (pos && pos.length === 0) return;              // a name - keep the bare label
+    const probe = translationProbe(key, pos || []);
+    if (probe === key) return;                        // nothing to disambiguate
+    return gtranslate(probe).then(function(zh){
+      const label = cleanZh(zh);
+      if (label){
+        transDetail[key] = { zh: label, pos: pos || [], dim: false, probe: probe };
+        transCache[key] = label;
+      }
+    });
+  }).catch(function(){});
+
+  return fast;
 }
 
 function translate(word){
@@ -1299,20 +1310,29 @@ const Speech = (function(){
     // first onvoiceschanged. Poll a few times until an English voice appears.
     let tries = 0;
     const iv = setInterval(function(){
-      if (voice || tries++ >= 10){ clearInterval(iv); return; }
+      if (voice || tries++ >= 15){ clearInterval(iv); return; }
       voice = pick();
     }, 200);
   }
 
   // iOS Safari refuses to speak until the engine has been touched once inside a
-  // real user gesture. Prime it with a silent utterance on the first interaction.
+  // real user gesture, and a volume-0 utterance is treated as silence (it does
+  // not count as "touching" the engine on some versions). So prime with a real,
+  // near-inaudible word and only stop trying once an actual voice is loaded.
   function prime(){
-    if (primed || !window.speechSynthesis) return;
-    primed = true;
+    if (!window.speechSynthesis) return;
+    if (primed) return;
     try {
-      const u = new SpeechSynthesisUtterance(' ');
-      u.volume = 0;
-      u.rate = 1;
+      const v = voice || pick();
+      if (!v && window.speechSynthesis.getVoices().length === 0){
+        // voices not loaded yet - keep primed=false so a later gesture retries
+        return;
+      }
+      primed = true;
+      const u = new SpeechSynthesisUtterance('hi');
+      u.volume = 0.02;
+      u.rate = 1.6;
+      if (v) u.voice = v;
       window.speechSynthesis.speak(u);
     } catch (e){ /* ignore */ }
   }
