@@ -699,8 +699,14 @@ function judge(minY, maxY){
     const hits = [];
     return pass(hits, from, to).then(function(){
       if (!hits.length) return;          // nothing left - settled
-      applyHits(hits, scored);
-      return round();
+      // One word per row: keep only the longest row found for each index.
+      const best = keepLongestPerRow(hits);
+
+      // Show every retained word one at a time, then apply them all.
+      return presentQueue(best).then(function(){
+        applyHits(best, scored);
+        return round();
+      });
     });
   }
 
@@ -726,14 +732,14 @@ function judge(minY, maxY){
     scanSet(y, s);
     return isVocab(s.text).then(function(hit){
       if (hit){
-        // Found one - do NOT quit. Record it and keep going: a second word
-        // further right on the same row still counts, and the rest of the
-        // board has not been looked at yet.
+        // Found one - do NOT quit. Keep looking for a LONGER word on the same
+        // row (only the longest survives per row) and finish the board.
         if (!scored[s.text]){
           hits.push({ y: y, x: s.x, len: s.len, text: s.text });
         }
+        // only slices at least as long as this one are worth trying further right
         const rest = slices.filter(function(q){
-          return q.x > s.x && q.text !== s.text;
+          return q.x > s.x && q.text !== s.text && q.len >= s.len;
         });
         if (rest.length) return trySlice(hits, y, rest, 0);
         return pass(hits, y + 1, to);
@@ -741,6 +747,50 @@ function judge(minY, maxY){
       return trySlice(hits, y, slices, k + 1);
     });
   }
+}
+
+/* Keep the longest word for each row index. Ties are broken by the leftmost,
+   so a row can never contribute twice. */
+function keepLongestPerRow(hits){
+  const byRow = {};
+  hits.forEach(function(h){
+    const cur = byRow[h.y];
+    if (!cur || h.len > cur.len || (h.len === cur.len && h.x < cur.x)){
+      byRow[h.y] = h;
+    }
+  });
+  // queue order: top to bottom, then left to right, so words are shown in the
+  // order the player would read them
+  return Object.keys(byRow).map(Number).sort(function(a, b){ return a - b; })
+    .map(function(y){ return byRow[y]; });
+}
+
+/* Flash each word in turn - one card at a time - so a multi-word resolve reads
+   as a sequence rather than a single blur. Each card also resolves its Chinese
+   label before moving on. */
+function presentQueue(words){
+  if (!words.length) return Promise.resolve();
+
+  let chain = Promise.resolve();
+  words.forEach(function(w){
+    chain = chain.then(function(){
+      scanSet(w.y, { x: w.x, len: w.len, text: w.text });
+      showToast(w.text.toUpperCase(), '');
+      Sound.word(w.len);
+
+      // give the translation a moment to arrive, but never block longer than
+      // roughly one display step
+      return Promise.race([
+        translateDetail(w.text).then(function(d){
+          if (d && d.zh && !d.dim) showToast(w.text.toUpperCase(), d.zh);
+        }).catch(function(){}),
+        new Promise(function(done){ setTimeout(done, 380); })
+      ]).then(function(){
+        return new Promise(function(done){ setTimeout(done, 120); });
+      });
+    });
+  });
+  return chain;
 }
 
 /* Delete every collected word. A row is removed once, but EVERY word found on
@@ -801,7 +851,8 @@ function applyHits(hits, scored){
       }
     }
 
-    // score every distinct word on the row
+    // Score the single retained word for this row. The queue already flashed it
+    // on screen, so only the account book and the translation happen here.
     words.forEach(function(h){
       if (scored[h.text]) return;          // already paid for this word
       scored[h.text] = 1;
@@ -812,8 +863,6 @@ function applyHits(hits, scored){
       if (found.length > 5) found.pop();
 
       message = 'Found "' + h.text.toUpperCase() + '"  +' + (h.len * 100);
-      showToast(h.text.toUpperCase(), '');
-      Sound.word(h.len);
       Speech.say(h.text);
 
       // The Chinese label is only shown when the word has a real English
@@ -824,7 +873,6 @@ function applyHits(hits, scored){
         entry.zh = d.zh;
         entry.nameOnly = !!d.dim;
         entry.pos = d.pos || [];
-        showToast(h.text.toUpperCase(), d.dim ? '' : d.zh);
         refreshHUD();
       });
     });
