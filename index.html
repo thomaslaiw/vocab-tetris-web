@@ -379,9 +379,59 @@ function rememberHead(head){
   while (lastPhonicHeads.length > RECENT_HEADS_MAX) lastPhonicHeads.shift();
 }
 
+/* ============================================================ ROTATION
+   EXPERIMENT (transform-exp): rotations are computed, not stored.
+
+   Only the resting orientation (forms[0]) is kept per shape. Every other
+   orientation is derived by rotating it 90 degrees clockwise the required
+   number of times. That removes the whole class of bug where a hand-written
+   forms[2] disagrees with forms[0] (the Balance shapes shipped with a broken
+   table for exactly that reason).
+
+   The id in each cell travels with the cell, so a letter stays attached to the
+   same block no matter how many times the piece turns.
+   ============================================================ */
+
+/* pad a ragged matrix out to a rectangle with 0 = empty */
+function padForm(form){
+  let w = 0;
+  for (let y = 0; y < form.length; y++) if (form[y].length > w) w = form[y].length;
+  const out = [];
+  for (let y = 0; y < form.length; y++){
+    const row = form[y].slice();
+    while (row.length < w) row.push(0);
+    out.push(row);
+  }
+  return out;
+}
+
+/* one quarter turn clockwise */
+function rot90cw(form){
+  const f = padForm(form);
+  const h = f.length, w = f[0].length;
+  const out = [];
+  for (let y = 0; y < w; y++){
+    const row = [];
+    for (let x = 0; x < h; x++) row.push(f[h - 1 - x][y]);
+    out.push(row);
+  }
+  return out;
+}
+
+/* orientation r, derived from the resting form on every call */
+function formAt(shape, r){
+  let form = padForm(shape.forms[0]);
+  const turns = ((r % 4) + 4) % 4;
+  for (let i = 0; i < turns; i++) form = rot90cw(form);
+  return form;
+}
+
+/* how many distinct orientations a shape has - always 4 with computed rotation */
+function rotCount(shape){ return 4; }
+
 function pieceFrom(shapeName, characters){
   const shape = SHAPES[shapeName];
-  const form = shape.forms[0];
+  const form = formAt(shape, 0);
   const width = form[0].length;
   const maxX = Math.max(0, COLS - width);
   return {
@@ -501,7 +551,7 @@ function makePiece(typeName){
   return piece;
 }
 
-function formOf(p){ return p.shape.forms[p.r]; }
+function formOf(p){ return formAt(p.shape, p.r); }
 
 /* ---------------------------------------------------------------- collision */
 function collide(form, px, py){
@@ -1339,7 +1389,7 @@ function drawNext(){
   const s = 17;
   nctx.clearRect(0, 0, nextCv.width, nextCv.height);
   if (!nextPiece) return;
-  const form = nextPiece.shape.forms[0];
+  const form = formAt(nextPiece.shape, 0);
   const h = form.length, w = form[0].length;
   const ox = (nextCv.width - w * s) / 2, oy = (nextCv.height - h * s) / 2;
   for (let y = 0; y < h; y++)
@@ -1397,8 +1447,8 @@ function move(dx){
 
 function rotate(){
   if (!live()) return;
-  const nextR = (cur.r + 1) % cur.shape.forms.length;
-  const form = cur.shape.forms[nextR];
+  const nextR = (cur.r + 1) % rotCount(cur.shape);
+  const form = formAt(cur.shape, nextR);
 
   // Kick offsets. A wide rotation near a wall can need up to 3 columns of
   // correction (the Line is 4 wide but only 1 wide before rotating), so the
