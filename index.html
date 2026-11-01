@@ -771,33 +771,10 @@ function dictFetch(key, attempt){
 }
 
 function isVocab(word){
-  const key = word.toLowerCase();
-  if (wordCache[key] !== undefined) return Promise.resolve(wordCache[key]);
-
-  // Fast path: the curated list answers instantly, no network round-trip.
-  if (VOCAB.has(key)){
-    wordCache[key] = true;
-    return Promise.resolve(true);
-  }
-
-  let attempt = 0;
-
-  function run(){
-    return dictFetch(key, attempt).then(function(r){
-      if (r.definitive){
-        // Only cache settled answers. A rate limit must not become a "no".
-        wordCache[key] = r.verdict;
-        return r.verdict;
-      }
-      attempt++;
-      if (attempt >= DICT_RETRIES) return false;         // give up quietly
-      return new Promise(function(done){
-        setTimeout(done, DICT_BACKOFF_MS * attempt);
-      }).then(run);
-    });
-  }
-
-  return run();
+  // Pure list lookup: a word counts only if it is in the curated list.
+  // No online dictionary fallback, so nothing like "skall" slips through
+  // (Wiktionary's translation side still powers the Chinese labels separately).
+  return Promise.resolve(VOCAB.has(word.toLowerCase()));
 }
 
 function rowSlices(line){
