@@ -818,6 +818,15 @@ function scanSet(y, slice){
 }
 function scanClear(){ Scan.active = false; Scan.row = -1; Scan.len = 0; Scan.text = ''; render(); }
 
+/* The checker is instant now (pure list lookup), so without a pause every scan
+   step lands in the same microtask and the browser never repaints - the sweep
+   looks invisible. Yield one frame between steps so the highlight actually
+   lights up row by row. */
+const SCAN_STEP_MS = 30;
+function scanStep(){
+  return new Promise(function(done){ setTimeout(done, SCAN_STEP_MS); });
+}
+
 function judge(minY, maxY){
   resolving = true;
   const from = 0;
@@ -855,11 +864,13 @@ function judge(minY, maxY){
   function pass(hits, a, b){
     if (a > to) return Promise.resolve();
 
-    for (let y = a; y <= b; y++){
-      const slices = rowSlices(saved[y]);
+    const y = a;
+    const slices = rowSlices(saved[y]);
+    scanSet(y, null);                       // light this row as it is examined
+    return scanStep().then(function(){
       if (slices.length) return trySlice(hits, y, slices, 0);
-    }
-    return pass(hits, a + 1, b);
+      return pass(hits, y + 1, b);          // empty row: move on
+    });
   }
 
   function trySlice(hits, y, slices, k){
@@ -867,7 +878,7 @@ function judge(minY, maxY){
 
     const s = slices[k];
     scanSet(y, s);
-    return isVocab(s.text).then(function(hit){
+    return scanStep().then(function(){ return isVocab(s.text); }).then(function(hit){
       if (hit){
         // Found one - do NOT quit. Keep looking for a LONGER word on the same
         // row (only the longest survives per row) and finish the board.
