@@ -183,6 +183,11 @@
       </div>
     </div>
 
+    <div class="box">
+      <div class="label">Flip ammo</div>
+      <div id="ammo" class="ammo">●●</div>
+    </div>
+
     <div class="box"><div class="label">Status</div><div id="msg">Form 4+ letter words!</div></div>
 
     <div class="box" id="logWrap">
@@ -257,6 +262,8 @@ const nctx = nextCv.getContext('2d');
 let saved, board, cur, nextPiece, score, found, running, paused, over, won;
 let dropTimer, dropInterval, garbageLeft;
 let bricksCleared = 0;           // brick rows removed this game
+const FLIP_AMMO_START = 2;
+let flipAmmo = FLIP_AMMO_START;  // vertical flips left this game
 let piecesSinceClear = 0;        // pieces landed since the last word was found
 let toastTimer = null;
 let resolving = false;
@@ -1045,6 +1052,8 @@ const Sound = (function(){
     word(len){ chime(len); },
     brick(){ tone(392, 0, 0.10, 'triangle', 0.14); tone(261.63, 0.07, 0.14, 'triangle', 0.14); },
     garbage(){ tone(98, 0, 0.16, 'sawtooth', 0.10); tone(82.4, 0.10, 0.22, 'sawtooth', 0.10); },
+    flip(){ tone(523.25, 0, 0.07, 'square', 0.10); tone(392, 0.06, 0.09, 'square', 0.10); },
+    denied(){ tone(155.56, 0, 0.09, 'square', 0.09); },
     win(){
       [523.25, 659.25, 783.99, 1046.50].forEach(function(f, i){
         tone(f, i * 0.11, 0.30, 'triangle', 0.18);
@@ -1436,6 +1445,14 @@ function paintBricks(){
 
 function refreshHUD(){
   document.getElementById('score').textContent = score.toLocaleString();
+
+  const ammoEl = document.getElementById('ammo');
+  if (ammoEl){
+    let pips = '';
+    for (let i = 0; i < FLIP_AMMO_START; i++) pips += (i < flipAmmo ? '●' : '○');
+    ammoEl.textContent = pips;
+    ammoEl.classList.toggle('empty', flipAmmo <= 0);
+  }
   document.getElementById('msg').textContent = message;
   document.getElementById('log').innerHTML = found.map(function(f){
     // A name-only word (Dell, Paris) gets a dim label and a "name" tag so the
@@ -1505,17 +1522,25 @@ function rotate(){
 /* Vertical flip: mirror the piece top-to-bottom. In this engine that is the
    rotation plus a vertical mirror, stored as orientation r + 4 (r 0-3 rotate,
    4-7 the same rotations flipped). The letter ids travel with their cells, so
-   the word the piece carries is unchanged - only its arrangement is. */
+   the word the piece carries is unchanged - only its arrangement is.
+
+   Flipping costs one round of ammunition. The game starts with two, so a run
+   begins with exactly two flips available. */
 function flipVertical(){
   if (!live()) return;
+  if (flipAmmo <= 0){ Sound.denied(); render(); return; }
+
   const n = rotCount(cur.shape);          // 8 = 4 rotations x 2 mirrors
   const half = n / 2;
   // toggling the mirror bit keeps the current rotation
   const rotated = cur.r % half;
   const mirrored = cur.r >= half;
   const nextR = mirrored ? rotated : rotated + half;
+
   if (tryOrient(nextR)){
-    Sound.rotate();
+    flipAmmo--;                           // only spend it when the flip happens
+    Sound.flip();
+    refreshHUD();
     render();
   }
 }
@@ -1552,6 +1577,7 @@ function resetGame(){
   garbageLeft = GARBAGE_ROWS;
   bricksCleared = 0;
   piecesSinceClear = 0;
+  flipAmmo = FLIP_AMMO_START;
   for (let r = 0; r < GARBAGE_ROWS; r++){
     const y = ROWS - 1 - r;
     for (let x = 0; x < COLS; x++) saved[y][x] = -1;
