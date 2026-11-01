@@ -241,7 +241,7 @@
    English word. Only rows within 1 of the piece's landing span are checked.
    ===================================================================== */
 
-const DATA = {"shapes":{"LLeft":{"forms":[[[1,2,3],[0,0,4]],[[0,1],[0,2],[4,3]],[[4,0,0],[3,2,1]],[[3,4],[2,0],[1,0]]],"grps":[[1,2,3],[3,4]]},"LLeft3":{"forms":[[[4,3,2],[0,0,1]],[[0,4],[0,3],[1,2]],[[1,0,0],[2,3,4]],[[2,1],[3,0],[4,0]]],"grps":[[1],[2,3,4]]},"LRight":{"forms":[[[2,3,4],[1,0,0]],[[1,2],[0,3],[0,4]],[[0,0,1],[4,3,2]],[[4,0],[3,0],[2,1]]],"grps":[[2,1],[2,3,4]]},"LRight3":{"forms":[[[1,2,3],[4,0,0]],[[4,1],[0,2],[0,3]],[[0,0,4],[3,2,1]],[[3,0],[2,0],[1,4]]],"grps":[[4],[3,2,1]]},"BalanceLeft":{"forms":[[[1,2,0],[0,3,4]],[[0,1],[3,2],[4,0]],[[4,3,0],[0,2,1]],[[0,4],[2,3],[1,0]]],"grps":[[2,3],[4],[1]]},"BalanceRight":{"forms":[[[0,3,4],[1,2,0]],[[1,0],[2,3],[0,4]],[[0,2,1],[4,3,0]],[[4,0],[3,2],[0,1]]],"grps":[[2,3],[4],[1]]},"Line":{"forms":[[[1],[2],[3],[4]],[[4,3,2,1]],[[4],[3],[2],[1]],[[1,2,3,4]]],"grps":[[1,2,3,4]]},"TShape":{"forms":[[[1,2,3],[0,4,0]],[[0,1],[4,2],[0,3]],[[0,4,0],[3,2,1]],[[3,0],[2,4],[1,0]]],"grps":[[1,2,3],[2,4]]},"TShape2":{"forms":[[[2,3,4],[0,1,0]],[[0,2],[1,3],[0,4]],[[0,1,0],[4,3,2]],[[4,0],[3,1],[2,0]]],"grps":[[3,1],[2,3,4]]},"TShape3":{"forms":[[[2,3,4],[0,1,0]],[[0,2],[1,3],[0,4]],[[0,1,0],[4,3,2]],[[4,0],[3,1],[2,0]]],"grps":[[1],[2,3,4]]},"LLeft4":{"forms":[[[4,3,2],[0,0,1]],[[0,4],[0,3],[1,2]],[[1,0,0],[2,3,4]],[[2,1],[3,0],[4,0]]],"grps":[[1],[4,3,2]]},"TShape4":{"forms":[[[2,3,4],[0,1,0]],[[0,2],[1,3],[0,4]],[[0,1,0],[4,3,2]],[[4,0],[3,1],[2,0]]],"grps":[[1],[4,3,2]]},"TShape5":{"forms":[[[1,2,3],[0,4,0]],[[0,1],[4,2],[0,3]],[[0,4,0],[3,2,1]],[[3,0],[2,4],[1,0]]],"grps":[[3,2,1],[2,4]]},"SquareC":{"forms":[[[1,2],[4,3]],[[4,1],[3,2]],[[3,4],[2,1]],[[2,3],[1,4]]],"grps":[[1,2],[3,4]]},"SquareV1":{"forms":[[[1,2],[4,3]],[[4,1],[3,2]],[[3,4],[2,1]],[[2,3],[1,4]]],"grps":[[1,2],[3],[4]]},"SquareV2":{"forms":[[[1,2],[4,3]],[[4,1],[3,2]],[[3,4],[2,1]],[[2,3],[1,4]]],"grps":[[1],[2],[3,4]]}},"phonicsets":{"1":["b","c","d","f","g","h","j","k","l","m","n","p","r","s","t","v","w","x","y","z","a","e","i","o","u"],"2":["sh","ch","th","wh","ph","kn","wr","gn","bl","br","cl","cr","dr","fl","fr","gl","gr","pl","pr","sc","sk","sl","sm","sn","sp","st","sw","tr","tw","ai","ea","ee","ey","ie","oa","oe","oo","ou","ue","ay"],"3":["ack","ail","ain","air","ake","ale","all","ame","amp","and","ank","ant","ape","ark","arm","arn","art","ast","ate","ath","ave","aze","eat","eck","eed","een","eep","ell","end","ent","ern","est","ice","ick","ide","ife","ill","ime","ine","ing","ink","int","ist","oad","oat","ock","ond","one","ong","ool","oom","oon","oop","ope","ore","orn","ort","oss","owl","own","uck","ung","scr","spr","str","spl","squ","thr","shr","ace","ade","age","ane","are","ait","eak","eal","eam","ean","ear","eek","eel","eem","eer","eet","ike","ile","ipe","ire","ite","ive","ild","ind","oak","oar","obe","ode","oke","old","ole","oll","olt","ome","ote","ove","ost","uff","ull","ult","umb","ump","und","une","unk","unt","ush","usk","ust","ute","arc","ard","arl","arp","erd","ere","erg","erk","erm","ers","ert","ird","irk","irl","irm","irt","orb","ord","ork","orm","urb","urd","ure","urg","url","urn","urs","urt","tch","dge","nch"],"4":["atch","ight","ound","ouse"]}};
+const DATA = {"shapes":{"LLeft":{"forms":[[[1,2,3],[0,0,4]],[[0,1],[0,2],[4,3]],[[4,0,0],[3,2,1]],[[3,4],[2,0],[1,0]]],"grps":[[1,2,3],[3,4]]},"LLeft3":{"forms":[[[4,3,2],[0,0,1]],[[0,4],[0,3],[1,2]],[[1,0,0],[2,3,4]],[[2,1],[3,0],[4,0]]],"grps":[[1],[2,3,4]]},"LRight":{"forms":[[[2,3,4],[1,0,0]],[[1,2],[0,3],[0,4]],[[0,0,1],[4,3,2]],[[4,0],[3,0],[2,1]]],"grps":[[2,1],[2,3,4]]},"LRight3":{"forms":[[[1,2,3],[4,0,0]],[[4,1],[0,2],[0,3]],[[0,0,4],[3,2,1]],[[3,0],[2,0],[1,4]]],"grps":[[4],[3,2,1]]},"BalanceLeft":{"forms":[[[1,2,0],[0,3,4]],[[0,1],[3,2],[4,0]],[[4,3,0],[0,2,1]],[[0,4],[2,3],[1,0]]],"grps":[[2,3],[4],[1]]},"BalanceRight":{"forms":[[[0,3,4],[1,2,0]],[[1,0],[2,3],[0,4]],[[0,2,1],[4,3,0]],[[4,0],[3,2],[0,1]]],"grps":[[2,3],[4],[1]]},"Line":{"forms":[[[1],[2],[3],[4]],[[4,3,2,1]],[[4],[3],[2],[1]],[[1,2,3,4]]],"grps":[[1],[2],[3],[4]]},"TShape":{"forms":[[[1,2,3],[0,4,0]],[[0,1],[4,2],[0,3]],[[0,4,0],[3,2,1]],[[3,0],[2,4],[1,0]]],"grps":[[1,2,3],[2,4]]},"TShape2":{"forms":[[[2,3,4],[0,1,0]],[[0,2],[1,3],[0,4]],[[0,1,0],[4,3,2]],[[4,0],[3,1],[2,0]]],"grps":[[3,1],[2,3,4]]},"TShape3":{"forms":[[[2,3,4],[0,1,0]],[[0,2],[1,3],[0,4]],[[0,1,0],[4,3,2]],[[4,0],[3,1],[2,0]]],"grps":[[1],[2,3,4]]},"LLeft4":{"forms":[[[4,3,2],[0,0,1]],[[0,4],[0,3],[1,2]],[[1,0,0],[2,3,4]],[[2,1],[3,0],[4,0]]],"grps":[[1],[4,3,2]]},"TShape4":{"forms":[[[2,3,4],[0,1,0]],[[0,2],[1,3],[0,4]],[[0,1,0],[4,3,2]],[[4,0],[3,1],[2,0]]],"grps":[[1],[4,3,2]]},"TShape5":{"forms":[[[1,2,3],[0,4,0]],[[0,1],[4,2],[0,3]],[[0,4,0],[3,2,1]],[[3,0],[2,4],[1,0]]],"grps":[[3,2,1],[2,4]]},"SquareC":{"forms":[[[1,2],[4,3]],[[4,1],[3,2]],[[3,4],[2,1]],[[2,3],[1,4]]],"grps":[[1,2],[3,4]]},"SquareV1":{"forms":[[[1,2],[4,3]],[[4,1],[3,2]],[[3,4],[2,1]],[[2,3],[1,4]]],"grps":[[1,2],[3],[4]]},"SquareV2":{"forms":[[[1,2],[4,3]],[[4,1],[3,2]],[[3,4],[2,1]],[[2,3],[1,4]]],"grps":[[1],[2],[3,4]]}},"phonicsets":{"1":["b","c","d","f","g","h","j","k","l","m","n","p","r","s","t","v","w","x","y","z","a","e","i","o","u"],"2":["sh","ch","th","wh","ph","kn","wr","gn","bl","br","cl","cr","dr","fl","fr","gl","gr","pl","pr","sc","sk","sl","sm","sn","sp","st","sw","tr","tw","ai","ea","ee","ey","ie","oa","oe","oo","ou","ue","ay"],"3":["ack","ail","ain","air","ake","ale","all","ame","amp","and","ank","ant","ape","ark","arm","arn","art","ast","ate","ath","ave","aze","eat","eck","eed","een","eep","ell","end","ent","ern","est","ice","ick","ide","ife","ill","ime","ine","ing","ink","int","ist","oad","oat","ock","ond","one","ong","ool","oom","oon","oop","ope","ore","orn","ort","oss","owl","own","uck","ung","scr","spr","str","spl","squ","thr","shr","ace","ade","age","ane","are","ait","eak","eal","eam","ean","ear","eek","eel","eem","eer","eet","ike","ile","ipe","ire","ite","ive","ild","ind","oak","oar","obe","ode","oke","old","ole","oll","olt","ome","ote","ove","ost","uff","ull","ult","umb","ump","und","une","unk","unt","ush","usk","ust","ute","arc","ard","arl","arp","erd","ere","erg","erk","erm","ers","ert","ird","irk","irl","irm","irt","orb","ord","ork","orm","urb","urd","ure","urg","url","urn","urs","urt","tch","dge","nch"],"4":["atch","ight","ound","ouse"]}};
 const SHAPES = DATA.shapes;
 const SHAPE_NAMES = Object.keys(SHAPES);
 const PHONICSETS = DATA.phonicsets;
@@ -932,12 +932,14 @@ function presentQueue(words){
       Speech.say(w.text);                              // pronounce it now
 
       // Show the Chinese as soon as it arrives, but never hold the queue up for
-      // longer than one display step if the network is slow or offline.
+      // longer than one display step if the network is slow or offline. Mobile
+      // Safari's two-hop translate (Wiktionary parts-of-speech, then Google) is
+      // slower, so give it a wider window than desktop.
       return Promise.race([
         translateDetail(w.text).then(function(d){
           if (d && d.zh && !d.dim) showToast(w.text.toUpperCase(), d.zh);
         }).catch(function(){}),
-        new Promise(function(done){ setTimeout(done, 600); })
+        new Promise(function(done){ setTimeout(done, 1600); })
       ]).then(function(){
         return new Promise(function(done){ setTimeout(done, 260); });
       });
@@ -1282,6 +1284,7 @@ function translate(word){
 const Speech = (function(){
   let enabled = true;
   let voice = null;
+  let primed = false;
 
   function pick(){
     if (!window.speechSynthesis) return null;
@@ -1290,15 +1293,40 @@ const Speech = (function(){
     return list.find(function(v){ return /^en[-_]/i.test(v.lang); }) || list[0] || null;
   }
 
-  if (window.speechSynthesis){
+  function loadVoices(){
     voice = pick();
+    // Safari loads voices asynchronously and sometimes needs a nudge past the
+    // first onvoiceschanged. Poll a few times until an English voice appears.
+    let tries = 0;
+    const iv = setInterval(function(){
+      if (voice || tries++ >= 10){ clearInterval(iv); return; }
+      voice = pick();
+    }, 200);
+  }
+
+  // iOS Safari refuses to speak until the engine has been touched once inside a
+  // real user gesture. Prime it with a silent utterance on the first interaction.
+  function prime(){
+    if (primed || !window.speechSynthesis) return;
+    primed = true;
+    try {
+      const u = new SpeechSynthesisUtterance(' ');
+      u.volume = 0;
+      u.rate = 1;
+      window.speechSynthesis.speak(u);
+    } catch (e){ /* ignore */ }
+  }
+
+  if (window.speechSynthesis){
+    loadVoices();
     // voices load asynchronously in most browsers
-    window.speechSynthesis.onvoiceschanged = function(){ voice = pick(); };
+    window.speechSynthesis.onvoiceschanged = loadVoices;
   }
 
   return {
     say(word){
       if (!enabled || !window.speechSynthesis) return;
+      prime();
       try {
         window.speechSynthesis.cancel();      // never queue up
         const u = new SpeechSynthesisUtterance(String(word).toLowerCase());
@@ -1308,13 +1336,21 @@ const Speech = (function(){
         u.volume = 1;
         const v = voice || pick();
         if (v) u.voice = v;
-        window.speechSynthesis.speak(u);
+        // iOS Safari sometimes drops a speak() issued in the same tick as a
+        // cancel(). Defer it a beat so the engine has time to settle.
+        setTimeout(function(){ try { window.speechSynthesis.speak(u); } catch (e){} }, 40);
       } catch (e){ /* speech is a nicety, never break the game */ }
     },
     toggle(){ enabled = !enabled; if (!enabled && window.speechSynthesis) window.speechSynthesis.cancel(); return enabled; },
-    get enabled(){ return enabled; }
+    get enabled(){ return enabled; },
+    prime: prime
   };
 })();
+
+// unlock speech on the first real gesture (iOS requires it)
+['touchstart','touchend','keydown','pointerdown','click'].forEach(function(ev){
+  document.addEventListener(ev, function(){ Speech.prime(); }, { once: false, passive: true });
+});
 
 /* ---------------------------------------------------------------- render */
 const PHONIC_COLOR = '#4ecdc4';
