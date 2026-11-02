@@ -21,6 +21,8 @@
   #side{width:190px;display:flex;flex-direction:column;gap:11px}
   .label{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#6f6f8a;margin-bottom:6px}
   .val{font-size:24px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+  #ammo{font-size:24px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;color:#4ecdc4}
+  #ammo.empty{color:#56566e}
   .box{background:#1e1e2c;border-radius:6px;padding:10px 12px}
 
   #nextCv{display:block;margin:2px auto 0}
@@ -203,7 +205,7 @@
 
     <div class="box">
       <div class="label">Flip ammo</div>
-      <div id="ammo" class="ammo">●●</div>
+      <div id="ammo" class="ammo">2</div>
     </div>
 
     <div class="box"><div class="label">Status</div><div id="msg">Form 4+ letter words!</div></div>
@@ -253,7 +255,7 @@
    ===================================================================== */
 
 const DATA = {"shapes":{"LLeft":{"forms":[[[1,2,3],[0,0,4]],[[0,1],[0,2],[4,3]],[[4,0,0],[3,2,1]],[[3,4],[2,0],[1,0]]],"grps":[[1,2,3],[3,4]]},"LLeft3":{"forms":[[[4,3,2],[0,0,1]],[[0,4],[0,3],[1,2]],[[1,0,0],[2,3,4]],[[2,1],[3,0],[4,0]]],"grps":[[1],[2,3,4]]},"LRight":{"forms":[[[2,3,4],[1,0,0]],[[1,2],[0,3],[0,4]],[[0,0,1],[4,3,2]],[[4,0],[3,0],[2,1]]],"grps":[[2,1],[2,3,4]]},"LRight3":{"forms":[[[1,2,3],[4,0,0]],[[4,1],[0,2],[0,3]],[[0,0,4],[3,2,1]],[[3,0],[2,0],[1,4]]],"grps":[[4],[3,2,1]]},"BalanceLeft":{"forms":[[[1,2,0],[0,3,4]],[[0,1],[3,2],[4,0]],[[4,3,0],[0,2,1]],[[0,4],[2,3],[1,0]]],"grps":[[2,3],[4],[1]]},"BalanceRight":{"forms":[[[0,3,4],[1,2,0]],[[1,0],[2,3],[0,4]],[[0,2,1],[4,3,0]],[[4,0],[3,2],[0,1]]],"grps":[[2,3],[4],[1]]},"Line":{"forms":[[[1],[2],[3],[4]],[[4,3,2,1]],[[4],[3],[2],[1]],[[1,2,3,4]]],"grps":[[1],[2],[3],[4]]},"TShape":{"forms":[[[1,2,3],[0,4,0]],[[0,1],[4,2],[0,3]],[[0,4,0],[3,2,1]],[[3,0],[2,4],[1,0]]],"grps":[[1,2,3],[2,4]]},"TShape2":{"forms":[[[2,3,4],[0,1,0]],[[0,2],[1,3],[0,4]],[[0,1,0],[4,3,2]],[[4,0],[3,1],[2,0]]],"grps":[[3,1],[2,3,4]]},"TShape3":{"forms":[[[2,3,4],[0,1,0]],[[0,2],[1,3],[0,4]],[[0,1,0],[4,3,2]],[[4,0],[3,1],[2,0]]],"grps":[[1],[2,3,4]]},"LLeft4":{"forms":[[[4,3,2],[0,0,1]],[[0,4],[0,3],[1,2]],[[1,0,0],[2,3,4]],[[2,1],[3,0],[4,0]]],"grps":[[1],[4,3,2]]},"TShape4":{"forms":[[[2,3,4],[0,1,0]],[[0,2],[1,3],[0,4]],[[0,1,0],[4,3,2]],[[4,0],[3,1],[2,0]]],"grps":[[1],[4,3,2]]},"TShape5":{"forms":[[[1,2,3],[0,4,0]],[[0,1],[4,2],[0,3]],[[0,4,0],[3,2,1]],[[3,0],[2,4],[1,0]]],"grps":[[3,2,1],[2,4]]},"SquareC":{"forms":[[[1,2],[4,3]],[[4,1],[3,2]],[[3,4],[2,1]],[[2,3],[1,4]]],"grps":[[1,2],[3,4]]},"SquareV1":{"forms":[[[1,2],[4,3]],[[4,1],[3,2]],[[3,4],[2,1]],[[2,3],[1,4]]],"grps":[[1,2],[3],[4]]},"SquareV2":{"forms":[[[1,2],[4,3]],[[4,1],[3,2]],[[3,4],[2,1]],[[2,3],[1,4]]],"grps":[[1],[2],[3,4]]}},"phonicsets":{"1":["b","c","d","f","g","h","j","k","l","m","n","p","r","s","t","v","w","x","y","z","a","e","i","o","u"],"2":["sh","ch","th","wh","ph","kn","wr","gn","bl","br","cl","cr","dr","fl","fr","gl","gr","pl","pr","sc","sk","sl","sm","sn","sp","st","sw","tr","tw","ai","ea","ee","ey","ie","oa","oe","oo","ou","ue","ay"],"3":["ack","ail","ain","air","ake","ale","all","ame","amp","and","ank","ant","ape","ark","arm","arn","art","ast","ate","ath","ave","aze","eat","eck","eed","een","eep","ell","end","ent","ern","est","ice","ick","ide","ife","ill","ime","ine","ing","ink","int","ist","oad","oat","ock","ond","one","ong","ool","oom","oon","oop","ope","ore","orn","ort","oss","owl","own","uck","ung","scr","spr","str","spl","squ","thr","shr","ace","ade","age","ane","are","ait","eak","eal","eam","ean","ear","eek","eel","eem","eer","eet","ike","ile","ipe","ire","ite","ive","ild","ind","oak","oar","obe","ode","oke","old","ole","oll","olt","ome","ote","ove","ost","uff","ull","ult","umb","ump","und","une","unk","unt","ush","usk","ust","ute","arc","ard","arl","arp","erd","ere","erg","erk","erm","ers","ert","ird","irk","irl","irm","irt","orb","ord","ork","orm","urb","urd","ure","urg","url","urn","urs","urt","tch","dge","nch"],"4":["atch","ight","ound","ouse"]}};
-const VERSION = 'v1.0.0 (3)';
+const VERSION = 'v1.0.0 (4)';
 document.getElementById('ver').textContent = VERSION;
 const SHAPES = DATA.shapes;
 const SHAPE_NAMES = Object.keys(SHAPES);
@@ -275,7 +277,7 @@ const VOCAB_ZH = (function(){
 const COLS = 10, ROWS = 20;
 const MIN_WORD = 4;              // shortest word that can clear a row
 const GARBAGE_ROWS = 3;          // rows of bricks the player must clear to win
-const GARBAGE_RISE_AFTER = 10;   // pieces without a clear before a new brick row rises
+const GARBAGE_RISE_AFTER = 8;   // pieces without a clear before a new brick row rises
 
 
 /* ------------------------------------------------------------------ canvas */
@@ -514,40 +516,31 @@ function pieceFrom(shapeName, characters){
 }
 
 /* ------------------------------------------------- WHAT A SQUARE MUST CARRY
-   A 2x2 square of four consonants is dead weight - it can never join a word in
-   two directions. So the square comes in three flavours:
+   A 2x2 square has THREE fill methods (drawn uniformly after the shape is
+   chosen):
 
-     SquareC   20%  must carry at least 2 CONSONANTS
-     SquareV1  40%  must carry at least 2 VOWELS
-     SquareV2  40%  same shape as V1, listed separately so its share of the
-                    draw can be tuned on its own
+     SquareC  full CONSONANT  - all four cells are single consonants.
+              Refilled if a horizontal side reads as a "never bigram".
+     SquareV1 full VOWEL       - all four cells are single vowels.
+     SquareV2 half + half      - one row is a 2-letter phonics ("1-2"), the
+              other row two single letters ("3-4"). Refilled if the
+              single-letter side reads as a "never bigram".
 
-   "At least", not "exactly": 3 or 4 vowels is fine.
+   A "never bigram" is a 2-letter consonant combo that appears inside no
+   English word, so that side can never join a word - the square is dead
+   weight and must be refilled.
    ============================================================ */
 const VOWELS = ['a','e','i','o','u','y'];
 const VOWEL_MIN = 2;
-const CONSONANT_MIN = 2;
 
-const NEEDS_VOWELS = ["SquareV1", "SquareV2"];
-const NEEDS_CONSONANTS = ['SquareC'];
+const NEEDS_VOWELS = [];   // rewritten at build time (TinyL for altertetris)
+const NEEDS_CONSONANTS = [];
 
-// weighted draw for the square family
-const SQUARE_VARIANTS = [
-  { name: 'SquareC',  weight: 20 },
-  { name: 'SquareV1', weight: 40 },
-  { name: 'SquareV2', weight: 40 }
-];
-
-function pickWeighted(list){
-  let total = 0;
-  list.forEach(function(e){ total += e.weight; });
-  let r = Math.random() * total;
-  for (let i = 0; i < list.length; i++){
-    r -= list[i].weight;
-    if (r <= 0) return list[i].name;
-  }
-  return list[list.length - 1].name;
-}
+// Single-letter pools the square fill methods draw from.
+const SQUARE_VOWELS = ['a','e','i','o','u'];
+const SQUARE_CONSONANTS = (PHONICSETS['1'] || []).filter(function(c){
+  return SQUARE_VOWELS.indexOf(c) === -1;
+});
 
 function countVowels(characters){
   let n = 0;
@@ -559,34 +552,89 @@ function countVowels(characters){
   return n;
 }
 
-function countConsonants(characters){
-  let n = 0;
-  for (let i = 0; i < characters.length; i++){
-    const c = characters[i];
-    if (!c) continue;
-    if (VOWELS.indexOf(String(c).toLowerCase()) === -1) n++;   // 'y' counts as a vowel
+/* The two horizontal sides of a 2x2 square, read left to right, in the resting
+   orientation [[1,2],[4,3]]: top = cells 1+2, bottom = cells 4+3. */
+function squareSides(characters){
+  const top = String(characters[1] || '') + String(characters[2] || '');
+  const bot = String(characters[4] || '') + String(characters[3] || '');
+  return [top, bot];
+}
+function squareTopDead(characters){ return NEVER_BIGRAMS.has(squareSides(characters)[0]); }
+function squareBottomDead(characters){ return NEVER_BIGRAMS.has(squareSides(characters)[1]); }
+
+/* Build a square with one of the three fill methods. Returns null to signal
+   "refill" (the roll produced a dead side and must be rolled again). */
+function buildSquare(name){
+  const characters = [];
+  const phonics = [];
+
+  if (name === 'SquareC'){
+    // full consonant: four single consonants
+    for (let id = 1; id <= 4; id++){
+      const c = SQUARE_CONSONANTS[Math.floor(Math.random() * SQUARE_CONSONANTS.length)];
+      characters[id] = c;
+      phonics.push(c);
+    }
+    if (squareTopDead(characters) || squareBottomDead(characters)) return null;
+    return { characters: characters, phonics: phonics, head: characters[1] };
   }
-  return n;
+
+  if (name === 'SquareV1'){
+    // full vowel: four single vowels (a dead bigram is impossible here)
+    for (let id = 1; id <= 4; id++){
+      const c = SQUARE_VOWELS[Math.floor(Math.random() * SQUARE_VOWELS.length)];
+      characters[id] = c;
+      phonics.push(c);
+    }
+    return { characters: characters, phonics: phonics, head: characters[1] };
+  }
+
+  // SquareV2: half phonics (top row 1-2) + half letters (bottom row 3-4)
+  const pool2 = PHONICSETS['2'] || [];
+  const top = pool2[Math.floor(Math.random() * pool2.length)];
+  characters[1] = top[0];
+  characters[2] = top[1];
+  phonics.push(top);
+  const pool1 = PHONICSETS['1'] || [];
+  [3, 4].forEach(function(id){
+    const c = pool1[Math.floor(Math.random() * pool1.length)];
+    characters[id] = c;
+    phonics.push(c);
+  });
+  if (squareBottomDead(characters)) return null;   // the half-letter side must be live
+  return { characters: characters, phonics: phonics, head: top };
 }
 
-/* A 2x2 square lands two letters side by side on a row. If either horizontal
-   side reads as a "never bigram" (a 2-letter combo that appears inside no
-   English word), that side can never join a word, so the square is dead weight
-   and must be refilled. Only 2x2 shapes (the square family) are checked. */
-function squareHasDeadSide(shape, characters){
-  const f = shape.forms[0];
-  if (f.length !== 2 || f[0].length !== 2) return false;   // not a square
-  const top = String(characters[f[0][0]] || '') + String(characters[f[0][1]] || '');
-  const bot = String(characters[f[1][0]] || '') + String(characters[f[1][1]] || '');
-  return NEVER_BIGRAMS.has(top) || NEVER_BIGRAMS.has(bot);
+/* ============================================================ SHAPE DRAW
+   Shapes are grouped into "classic" families. A piece is drawn in two steps:
+   first pick the classic shape family (uniform), then pick one of its fill
+   methods (uniform). This stops the square (3 methods) and the T / L families
+   (5 and 3 methods) from flooding a uniform single-name draw. */
+const FAMILY_DEFS = {
+  Line:    ['Line'],
+  Square:  ['SquareC', 'SquareV1', 'SquareV2'],
+  T:       ['TShape', 'TShape2', 'TShape3', 'TShape4', 'TShape5'],
+  LLeft:   ['LLeft', 'LLeft3', 'LLeft4'],
+  LRight:  ['LRight', 'LRight3'],
+  Balance: ['BalanceLeft', 'BalanceRight'],
+  TinyL:   ['TinyL']
+};
+
+const SHAPE_FAMILIES = Object.keys(FAMILY_DEFS).map(function(fam){
+  return {
+    name: fam,
+    variants: FAMILY_DEFS[fam].filter(function(v){ return SHAPES[v] !== undefined; })
+  };
+}).filter(function(f){ return f.variants.length > 0; });
+
+function pickShape(){
+  const fam = SHAPE_FAMILIES[Math.floor(Math.random() * SHAPE_FAMILIES.length)];
+  return fam.variants[Math.floor(Math.random() * fam.variants.length)];
 }
 
 function makePiece(typeName){
-  // When no shape is asked for, squares are drawn from the weighted list so the
-  // consonant/vowel split stays controlled; everything else is uniform.
-  const first = typeName || (Math.random() < 0.15
-      ? pickWeighted(SQUARE_VARIANTS)
-      : SHAPE_NAMES[Math.floor(Math.random() * SHAPE_NAMES.length)]);
+  // Classic shape first (uniform), then its fill method (uniform).
+  const first = typeName || pickShape();
 
   // Try the requested shape first, then any other shape. Some shapes (Square,
   // BalanceLeft) need two shared cells to agree at once and only succeed a
@@ -598,17 +646,19 @@ function makePiece(typeName){
 
   for (let i = 0; i < order.length; i++){
     const name = order[i];
+    const isSquare = name === 'SquareC' || name === 'SquareV1' || name === 'SquareV2';
     const needsVowels = NEEDS_VOWELS.indexOf(name) !== -1;
-    const needsConsonants = NEEDS_CONSONANTS.indexOf(name) !== -1;
 
     for (let attempt = 0; attempt < 2500; attempt++){
-      const built = buildCharacters(SHAPES[name]);
+      let built;
+      if (isSquare){
+        built = buildSquare(name);              // null => refill (dead side)
+      } else {
+        built = buildCharacters(SHAPES[name]);
+        if (!built) continue;
+        if (needsVowels && countVowels(built.characters) < VOWEL_MIN) continue;
+      }
       if (!built) continue;
-
-      // letter gates: skip this roll and try again
-      if (needsVowels && countVowels(built.characters) < VOWEL_MIN) continue;
-      if (needsConsonants && countConsonants(built.characters) < CONSONANT_MIN) continue;
-      if (squareHasDeadSide(SHAPES[name], built.characters)) continue;
 
       rememberHead(built.head);
       const piece = pieceFrom(name, built.characters);
@@ -1039,6 +1089,7 @@ function applyHits(hits, scored){
       scored[h.text] = 1;
 
       score += h.len * 100;
+      flipAmmo += 2;                       // a cleared line refills two flips (no cap)
       const entry = { word: h.text.toUpperCase(), zh: '', pts: h.len * 100 };
       found.unshift(entry);
       if (found.length > 5) found.pop();
@@ -1608,9 +1659,7 @@ function refreshHUD(){
 
   const ammoEl = document.getElementById('ammo');
   if (ammoEl){
-    let pips = '';
-    for (let i = 0; i < FLIP_AMMO_START; i++) pips += (i < flipAmmo ? '●' : '○');
-    ammoEl.textContent = pips;
+    ammoEl.textContent = flipAmmo;
     ammoEl.classList.toggle('empty', flipAmmo <= 0);
   }
   document.getElementById('msg').textContent = message;
@@ -1684,8 +1733,8 @@ function rotate(){
    4-7 the same rotations flipped). The letter ids travel with their cells, so
    the word the piece carries is unchanged - only its arrangement is.
 
-   Flipping costs one round of ammunition. The game starts with two, so a run
-   begins with exactly two flips available. */
+   Flipping costs one round of ammunition. The game starts with two; every
+   cleared line refills two more (no upper limit). */
 function flipVertical(){
   if (!live()) return;
   if (flipAmmo <= 0){ Sound.denied(); render(); return; }
